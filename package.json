@@ -1,4 +1,5 @@
-{
+{ 
+  "name": "autoecole-dev-DEMO",
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
     "@tanstack/react-query": "^5.8.4",
