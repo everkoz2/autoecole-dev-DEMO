@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabase/client';
 import toast from 'react-hot-toast';
-
+//aze
 interface AuthContextType {
   user: any;
   userRole: string;
