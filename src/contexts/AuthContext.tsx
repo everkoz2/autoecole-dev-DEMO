@@ -151,7 +151,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       if (error) throw error;
       if (!newUser) throw new Error("Utilisateur non créé");
-
+      console.log("newUser.id", newUser.id);
       // 2. Insertion du profil utilisateur (sans auto_ecole_id)
       const { error: profileError } = await supabase
         .from('utilisateurs')
