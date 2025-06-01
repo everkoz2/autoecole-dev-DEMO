@@ -39,83 +39,28 @@ const Auth = () => {
         throw new Error('Le mot de passe doit contenir au moins 6 caractères');
       }
 
-      // Appeler la fonction signUp du AuthContext, en passant toutes les données nécessaires
-      // La fonction signUp de ton AuthContext devra être mise à jour pour accepter 'nomAutoecole'
       await signUp(email, password, firstName, lastName, phone, nomAutoecole);
-      toast.success('Compte auto-école créé avec succès !');
-      setSuccess(true);
 
-      // --- NOUVELLE LOGIQUE APRÈS INSCRIPTION RÉUSSIE ---
-      // Récupérer l'ID de l'auto-école et envoyer le lien élève par email
-      const user = supabase.auth.getUser(); // Récupère l'utilisateur actuellement connecté/inscrit
+      // Récupérer l'utilisateur connecté
+      const { data: userData } = await supabase.auth.getUser();
+      const adminUserId = userData?.user?.id;
 
-      if (user && user.data.user) {
-        const adminUserId = user.data.user.id;
+      if (!adminUserId) throw new Error("Utilisateur non trouvé après inscription.");
 
-        // Récupérer l'ID de l'auto-école que cet admin vient de créer
-        const { data: autoecoleData, error: autoecoleError } = await supabase
-          .from('auto_ecoles')
-          .insert({
-            nom: nomAutoecole,
-            admin_id: currentUser.id
-          })
-          .select('id') // <-- pour récupérer l'id créé
-          .single();
+      // Récupérer l'auto-école liée à cet admin
+      const { data: autoecole, error: autoecoleError } = await supabase
+        .from('auto_ecoles')
+        .select('id')
+        .eq('admin_id', adminUserId)
+        .single();
 
-        if (autoecoleError) throw autoecoleError;
+      if (autoecoleError || !autoecole) throw new Error("Auto-école non trouvée après création.");
 
-        // Redirige l'utilisateur vers la page de son auto-école
-        if (autoecoleData && autoecoleData.id) {
-          navigate(`/auto-ecole/${autoecoleData.id}`);
-        }
-
-        if (autoecoleData) {
-          const autoecoleId = autoecoleData.id;
-          const eleveInscriptionLink = `https://demo.verkoz.com/inscription-eleve?ecole_id=${autoecoleId}`;
-
-          console.log("Lien d'inscription pour les élèves :", eleveInscriptionLink);
-
-          // Appel de l'Edge Function pour envoyer l'email
-          const { data: functionData, error: functionError } = await supabase.functions.invoke('send-eleve-link-email', {
-              body: {
-                  adminEmail: email, // L'email de l'admin
-                  eleveLink: eleveInscriptionLink,
-                  autoecoleName: nomAutoecole
-              }
-          });
-
-          if (functionError) {
-              console.error('Erreur lors de l\'envoi de l\'email par la fonction Edge:', functionError.message);
-              toast.error('Email de lien élève non envoyé. Vérifiez votre boîte spam ou contactez le support.');
-          } else {
-              toast.success('Lien d\'inscription pour les élèves envoyé par email !');
-          }
-
-          navigate('/admin-dashboard'); // Redirige l'admin vers son tableau de bord
-        } else {
-          toast.warn("Auto-école non trouvée. Veuillez réessayer ou contacter le support.");
-          navigate('/'); // Retour à l'accueil si problème majeur
-        }
-
-      } else {
-        toast.error("Erreur: Utilisateur non trouvé après inscription. Contactez le support.");
-        navigate('/'); // Retour à l'accueil en cas de problème inattendu
-      }
+      // Redirige vers la page de l'auto-école
+      navigate(`/auto-ecole/${autoecole.id}`);
 
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Une erreur est survenue';
-      let userFriendlyMessage = errorMessage;
-
-      // Traduire les messages d'erreur de Supabase
-      if (errorMessage.includes('Email not confirmed')) {
-        userFriendlyMessage = 'Veuillez confirmer votre email avant de vous connecter'; // Moins pertinent ici mais garder au cas où
-      } else if (errorMessage.includes('User already registered')) {
-        userFriendlyMessage = 'Un compte existe déjà avec cet email';
-      } else if (errorMessage.includes('duplicate key value violates unique constraint "auto_ecoles_admin_id_key"')) {
-        userFriendlyMessage = 'Cet email est déjà lié à une auto-école existante.';
-      }
-
-      toast.error(userFriendlyMessage);
+      // ...gestion des erreurs...
     } finally {
       setIsLoading(false);
     }
