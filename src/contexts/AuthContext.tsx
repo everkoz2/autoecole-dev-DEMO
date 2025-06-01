@@ -63,6 +63,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       try {
         if (session?.user) {
+          // Ajoute un délai pour laisser le temps à la BDD d'insérer l'utilisateur
+          await new Promise(res => setTimeout(res, 400));
           const role = await fetchUserRole(session.user.id);
           if (mounted) {
             setUser(session.user);
