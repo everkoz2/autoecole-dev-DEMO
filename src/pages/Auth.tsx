@@ -28,6 +28,7 @@ const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { signUp } = useAuth(); // On n'a plus besoin de signIn ici
+  const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,6 +43,7 @@ const Auth = () => {
       // La fonction signUp de ton AuthContext devra être mise à jour pour accepter 'nomAutoecole'
       await signUp(email, password, firstName, lastName, phone, nomAutoecole);
       toast.success('Compte auto-école créé avec succès !');
+      setSuccess(true);
 
       // --- NOUVELLE LOGIQUE APRÈS INSCRIPTION RÉUSSIE ---
       // Récupérer l'ID de l'auto-école et envoyer le lien élève par email
@@ -130,6 +132,11 @@ const Auth = () => {
             Inscrivez-vous pour créer votre compte administrateur et votre auto-école.
           </p>
         </div>
+        {success && (
+          <div className="bg-green-100 text-green-800 p-4 rounded mb-4 text-center">
+            🎉 Félicitations, votre auto-école a été créée avec succès !
+          </div>
+        )}
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm space-y-4">
             <div>
