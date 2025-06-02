@@ -155,6 +155,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // 2. Force la connexion pour que l'utilisateur soit authentifié
       await supabase.auth.signInWithPassword({ email, password });
 
+      const { data: sessionData } = await supabase.auth.getSession();
+      console.log("Session before insert", sessionData);
+
       // 3. Insertion du profil utilisateur (sans auto_ecole_id)
       const { error: profileError } = await supabase
         .from('utilisateurs')
