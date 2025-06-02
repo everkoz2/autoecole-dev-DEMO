@@ -46,7 +46,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await supabase.auth.signOut();
       setUser(null);
       setUserRole('');
-      navigate('/'); // Redirige vers la page d'accueil après déconnexion
+      navigate('/');
     } catch (error) {
       toast.error("Erreur lors de la déconnexion");
     } finally {
@@ -63,8 +63,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       try {
         if (session?.user) {
-          // Ajoute un délai pour laisser le temps à la BDD d'insérer l'utilisateur
-          await new Promise(res => setTimeout(res, 400));
           const role = await fetchUserRole(session.user.id);
           if (mounted) {
             setUser(session.user);
@@ -89,14 +87,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
-    // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (mounted) {
         handleAuthChange('INITIAL_SESSION', session);
       }
     });
 
-    // Subscribe to auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event !== 'INITIAL_SESSION') {
         handleAuthChange(event, session);
@@ -144,22 +140,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   ) => {
     try {
       setIsAuthLoading(true);
-      // 1. Création du compte Auth sécurisé
-      const { data: { user: newUser }, error } = await supabase.auth.signUp({
+
+      // 1. Créer le compte auth
+      const { data: { user: newUser }, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
       });
-      if (error) throw error;
-      if (!newUser) throw new Error("Utilisateur non créé");
 
-      // 2. Force la connexion pour que l'utilisateur soit authentifié
-      await supabase.auth.signInWithPassword({ email, password });
+      if (signUpError) throw signUpError;
+      if (!newUser) throw new Error("Erreur lors de la création du compte");
 
-      const { data: sessionData } = await supabase.auth.getSession();
-      console.log("Session before insert", sessionData);
+      // 2. Créer l'auto-école
+      const { data: autoEcole, error: autoEcoleError } = await supabase
+        .from('auto_ecoles')
+        .insert({
+          nom: nomAutoecole,
+          admin_id: newUser.id
+        })
+        .select()
+        .single();
 
-      // 3. Insertion du profil utilisateur (sans auto_ecole_id)
-      const { error: profileError } = await supabase
+      if (autoEcoleError) {
+        // Nettoyer le compte auth si l'auto-école n'a pas pu être créée
+        await supabase.auth.admin.deleteUser(newUser.id);
+        throw autoEcoleError;
+      }
+
+      // 3. Créer le profil utilisateur
+      const { error: userError } = await supabase
         .from('utilisateurs')
         .insert({
           id: newUser.id,
@@ -168,33 +176,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           nom: lastName,
           telephone: phone,
           role: 'admin',
-          heures_restantes: 0
+          auto_ecole_id: autoEcole.id
         });
-      if (profileError) throw profileError;
 
-      // ...suite du code...
+      if (userError) {
+        // Nettoyer l'auto-école et le compte auth en cas d'erreur
+        await supabase.from('auto_ecoles').delete().eq('id', autoEcole.id);
+        await supabase.auth.admin.deleteUser(newUser.id);
+        throw userError;
+      }
 
-      // 3. Création de l'auto-école
-      const { data: autoEcoleData, error: autoEcoleError } = await supabase
-        .from('auto_ecoles')
-        .insert({
-          nom: nomAutoecole,
-          admin_id: newUser.id
-        })
-        .select('id')
-        .single();
-      if (autoEcoleError) throw autoEcoleError;
+      // 4. Connecter l'utilisateur
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
 
-      // 4. Mise à jour de l'utilisateur avec l'id de l'auto-école
-      const { error: updateUserError } = await supabase
-        .from('utilisateurs')
-        .update({ auto_ecole_id: autoEcoleData.id })
-        .eq('id', newUser.id);
-      if (updateUserError) throw updateUserError;
+      if (signInError) throw signInError;
 
-      toast.success("Compte et auto-école créés !");
+      setUser(newUser);
+      setUserRole('admin');
+      navigate('/success');
+
     } catch (error: any) {
-      toast.error(error.message || "Erreur lors de la création");
+      console.error('Error in signUp:', error);
+      toast.error(error.message || "Erreur lors de la création du compte");
       throw error;
     } finally {
       setIsAuthLoading(false);
