@@ -62,7 +62,7 @@ export default function Navigation() {
               </div>
               <div className="hidden sm:ml-6 sm:flex sm:items-center">
                 {user ? (
-                  <Menu as="div" className="relative ml-3">
+                  <Menu as="div\" className="relative ml-3">
                     <div>
                       <Menu.Button className="flex rounded-full bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2">
                         <span className="sr-only">Open user menu</span>
