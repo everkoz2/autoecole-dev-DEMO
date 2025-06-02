@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../supabase/client';
 import toast from 'react-hot-toast';
 
@@ -20,12 +20,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [isBootstrapping, setIsBootstrapping] = useState(true);
   const navigate = useNavigate();
+  const { autoEcoleId } = useParams();
 
   const fetchUserRole = async (userId: string): Promise<string> => {
     try {
       const { data, error } = await supabase
         .from('utilisateurs')
-        .select('role')
+        .select('role, auto_ecole_id')
         .eq('id', userId)
         .maybeSingle();
 
@@ -33,6 +34,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error('Error fetching user role:', error);
         return '';
       }
+
+      // Vérifier si l'utilisateur appartient à l'auto-école actuelle
+      if (autoEcoleId && data?.auto_ecole_id !== autoEcoleId) {
+        return '';
+      }
+
       return data?.role || '';
     } catch (error) {
       console.error('Error in fetchUserRole:', error);
@@ -103,7 +110,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       mounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [autoEcoleId]); // Ajout de autoEcoleId comme dépendance
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -119,7 +126,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const role = await fetchUserRole(data.user.id);
         setUser(data.user);
         setUserRole(role);
-        navigate('/');
+        navigate(autoEcoleId ? `/${autoEcoleId}` : '/');
       }
     } catch (error: any) {
       let message = 'Email ou mot de passe incorrect';

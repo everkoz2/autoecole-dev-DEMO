@@ -44,67 +44,72 @@ function App() {
             <Navigation />
             <main className="container mx-auto px-4 py-8">
               <Routes>
+                {/* Routes publiques */}
                 <Route path="/" element={<Accueil />} />
-                <Route path="/:autoEcoleId" element={<Accueil />} />
-                <Route path="/forfaits" element={<Forfaits />} />
+                <Route path="/creer-auto-ecole" element={<CreerAutoEcole />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/success" element={<Success />} />
-                <Route path="/creer-auto-ecole" element={<CreerAutoEcole />} />
-                
-                {/* Routes protégées */}
-                <Route path="/mon-compte" element={
-                  <PrivateRoute>
-                    <MonCompte />
-                  </PrivateRoute>
-                } />
-                <Route path="/calendrier" element={
-                  <PrivateRoute>
-                    <Calendrier />
-                  </PrivateRoute>
-                } />
 
-                {/* Routes Élève et Moniteur */}
-                <Route path="/mes-heures" element={
-                  <PrivateRoute roles={['eleve', 'moniteur']}>
-                    <MesHeures />
-                  </PrivateRoute>
-                } />
+                {/* Routes avec auto-école */}
+                <Route path="/:autoEcoleId">
+                  <Route index element={<Accueil />} />
+                  <Route path="forfaits" element={<Forfaits />} />
+                  
+                  {/* Routes protégées */}
+                  <Route path="mon-compte" element={
+                    <PrivateRoute>
+                      <MonCompte />
+                    </PrivateRoute>
+                  } />
+                  <Route path="calendrier" element={
+                    <PrivateRoute>
+                      <Calendrier />
+                    </PrivateRoute>
+                  } />
 
-                {/* Routes Élève */}
-                <Route path="/mes-documents" element={
-                  <PrivateRoute roles={['eleve']}>
-                    <MesDocuments />
-                  </PrivateRoute>
-                } />
-                <Route path="/livret-apprentissage" element={
-                  <PrivateRoute roles={['eleve']}>
-                    <LivretApprentissage />
-                  </PrivateRoute>
-                } />
-                <Route path="/mes-factures" element={
-                  <PrivateRoute roles={['eleve']}>
-                    <MesFactures />
-                  </PrivateRoute>
-                } />
+                  {/* Routes Élève et Moniteur */}
+                  <Route path="mes-heures" element={
+                    <PrivateRoute roles={['eleve', 'moniteur']}>
+                      <MesHeures />
+                    </PrivateRoute>
+                  } />
 
-                {/* Routes Moniteur */}
-                <Route path="/eleves" element={
-                  <PrivateRoute roles={['moniteur']}>
-                    <Eleves />
-                  </PrivateRoute>
-                } />
+                  {/* Routes Élève */}
+                  <Route path="mes-documents" element={
+                    <PrivateRoute roles={['eleve']}>
+                      <MesDocuments />
+                    </PrivateRoute>
+                  } />
+                  <Route path="livret-apprentissage" element={
+                    <PrivateRoute roles={['eleve']}>
+                      <LivretApprentissage />
+                    </PrivateRoute>
+                  } />
+                  <Route path="mes-factures" element={
+                    <PrivateRoute roles={['eleve']}>
+                      <MesFactures />
+                    </PrivateRoute>
+                  } />
 
-                {/* Routes Admin */}
-                <Route path="/gestion-utilisateurs" element={
-                  <PrivateRoute roles={['admin']}>
-                    <GestionUtilisateurs />
-                  </PrivateRoute>
-                } />
-                <Route path="/logs" element={
-                  <PrivateRoute roles={['admin']}>
-                    <Logs />
-                  </PrivateRoute>
-                } />
+                  {/* Routes Moniteur */}
+                  <Route path="eleves" element={
+                    <PrivateRoute roles={['moniteur']}>
+                      <Eleves />
+                    </PrivateRoute>
+                  } />
+
+                  {/* Routes Admin */}
+                  <Route path="gestion-utilisateurs" element={
+                    <PrivateRoute roles={['admin']}>
+                      <GestionUtilisateurs />
+                    </PrivateRoute>
+                  } />
+                  <Route path="logs" element={
+                    <PrivateRoute roles={['admin']}>
+                      <Logs />
+                    </PrivateRoute>
+                  } />
+                </Route>
               </Routes>
             </main>
           </div>

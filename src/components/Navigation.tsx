@@ -15,16 +15,16 @@ export default function Navigation() {
 
   const navigation = [
     { name: 'Accueil', href: autoEcoleId ? `/${autoEcoleId}` : '/', roles: [] },
-    { name: 'Forfaits', href: '/forfaits', roles: [] },
+    { name: 'Forfaits', href: autoEcoleId ? `/${autoEcoleId}/forfaits` : '/forfaits', roles: [] },
     ...((!autoEcoleId && !user) ? [{ name: 'Créer une auto-école', href: '/creer-auto-ecole', roles: [] }] : []),
-    { name: 'Calendrier', href: '/calendrier', roles: ['eleve', 'moniteur', 'admin'] },
-    { name: 'Mes heures', href: '/mes-heures', roles: ['eleve', 'moniteur'] },
-    { name: 'Mes documents', href: '/mes-documents', roles: ['eleve'] },
-    { name: "Livret d'apprentissage", href: '/livret-apprentissage', roles: ['eleve'] },
-    { name: 'Mes factures', href: '/mes-factures', roles: ['eleve'] },
-    { name: 'Élèves', href: '/eleves', roles: ['moniteur'] },
-    { name: 'Gestion utilisateurs', href: '/gestion-utilisateurs', roles: ['admin'] },
-    { name: 'Logs', href: '/logs', roles: ['admin'] },
+    { name: 'Calendrier', href: `/${autoEcoleId}/calendrier`, roles: ['eleve', 'moniteur', 'admin'] },
+    { name: 'Mes heures', href: `/${autoEcoleId}/mes-heures`, roles: ['eleve', 'moniteur'] },
+    { name: 'Mes documents', href: `/${autoEcoleId}/mes-documents`, roles: ['eleve'] },
+    { name: "Livret d'apprentissage", href: `/${autoEcoleId}/livret-apprentissage`, roles: ['eleve'] },
+    { name: 'Mes factures', href: `/${autoEcoleId}/mes-factures`, roles: ['eleve'] },
+    { name: 'Élèves', href: `/${autoEcoleId}/eleves`, roles: ['moniteur'] },
+    { name: 'Gestion utilisateurs', href: `/${autoEcoleId}/gestion-utilisateurs`, roles: ['admin'] },
+    { name: 'Logs', href: `/${autoEcoleId}/logs`, roles: ['admin'] },
   ];
 
   const filteredNavigation = navigation.filter(item => 
@@ -84,7 +84,7 @@ export default function Navigation() {
                         <Menu.Item>
                           {({ active }) => (
                             <Link
-                              to="/mon-compte"
+                              to={`/${autoEcoleId}/mon-compte`}
                               className={classNames(
                                 active ? 'bg-gray-100' : '',
                                 'block px-4 py-2 text-sm text-gray-700'
@@ -155,7 +155,7 @@ export default function Navigation() {
                 <div className="space-y-1">
                   <Disclosure.Button
                     as={Link}
-                    to="/mon-compte"
+                    to={`/${autoEcoleId}/mon-compte`}
                     className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-primary-700 hover:text-white"
                   >
                     Mon compte
