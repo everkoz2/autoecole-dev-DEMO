@@ -151,9 +151,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       if (error) throw error;
       if (!newUser) throw new Error("Utilisateur non créé");
-      console.log("newUser.id", newUser.id);
-      console.log("user before insert", await supabase.auth.getUser());
-      // 2. Insertion du profil utilisateur (sans auto_ecole_id)
+
+      // 2. Force la connexion pour que l'utilisateur soit authentifié
+      await supabase.auth.signInWithPassword({ email, password });
+
+      // 3. Insertion du profil utilisateur (sans auto_ecole_id)
       const { error: profileError } = await supabase
         .from('utilisateurs')
         .insert({
@@ -166,6 +168,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           heures_restantes: 0
         });
       if (profileError) throw profileError;
+
+      // ...suite du code...
 
       // 3. Création de l'auto-école
       const { data: autoEcoleData, error: autoEcoleError } = await supabase
