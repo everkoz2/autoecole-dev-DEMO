@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../supabase/client';
 import { Dialog } from '@headlessui/react';
@@ -6,7 +6,6 @@ import toast from 'react-hot-toast';
 import LivretApprentissage from './LivretApprentissage';
 import MesDocuments from './MesDocuments';
 import { useAuth } from '../contexts/AuthContext'; // Assure-toi d'avoir accès à l'utilisateur connecté
-import React, { useEffect, useState } from 'react';
 
 interface User {
   id: string;
