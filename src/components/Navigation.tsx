@@ -1,5 +1,5 @@
 import React, { Fragment } from 'react';
-import { Link, useLocation, useParams } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Disclosure, Menu, Transition } from '@headlessui/react';
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../contexts/AuthContext';
@@ -9,9 +9,8 @@ function classNames(...classes: string[]) {
 }
 
 export default function Navigation() {
-  const { user, userRole, signOut } = useAuth();
+  const { user, userRole, signOut, autoEcoleId } = useAuth();
   const location = useLocation();
-  const { autoEcoleId } = useParams();
 
   const navigation = [
     { name: 'Accueil', href: autoEcoleId ? `/${autoEcoleId}` : '/', roles: [] },
@@ -25,7 +24,7 @@ export default function Navigation() {
     { name: 'Élèves', href: `/${autoEcoleId}/eleves`, roles: ['moniteur'] },
     { name: 'Gestion utilisateurs', href: `/${autoEcoleId}/gestion-utilisateurs`, roles: ['admin'] },
     { name: 'Logs', href: `/${autoEcoleId}/logs`, roles: ['admin'] },
-  ];
+  ].filter(item => autoEcoleId || !item.href.includes('undefined'));
 
   const filteredNavigation = navigation.filter(item => 
     item.roles.length === 0 || (userRole && item.roles.includes(userRole))

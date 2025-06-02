@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 interface AuthContextType {
   user: any;
   userRole: string;
-  autoEcoleId: string | null;  // Ajout de l'ID de l'auto-école
+  autoEcoleId: string | null;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, firstName: string, lastName: string, phone: string, nomAutoecole: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -18,10 +18,11 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<any>(null);
   const [userRole, setUserRole] = useState<string>('');
+  const [autoEcoleId, setAutoEcoleId] = useState<string | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [isBootstrapping, setIsBootstrapping] = useState(true);
   const navigate = useNavigate();
-  const { autoEcoleId } = useParams();
+  const { autoEcoleId: urlAutoEcoleId } = useParams();
 
   const fetchUserRole = async (userId: string): Promise<string> => {
     try {
@@ -36,8 +37,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return '';
       }
 
+      // Mettre à jour l'ID de l'auto-école
+      setAutoEcoleId(data?.auto_ecole_id || null);
+
       // Vérifier si l'utilisateur appartient à l'auto-école actuelle
-      if (autoEcoleId && data?.auto_ecole_id !== autoEcoleId) {
+      if (urlAutoEcoleId && data?.auto_ecole_id !== urlAutoEcoleId) {
         return '';
       }
 
@@ -54,6 +58,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await supabase.auth.signOut();
       setUser(null);
       setUserRole('');
+      setAutoEcoleId(null);
       navigate('/');
     } catch (error) {
       toast.error("Erreur lors de la déconnexion");
@@ -80,6 +85,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (mounted) {
             setUser(null);
             setUserRole('');
+            setAutoEcoleId(null);
           }
         }
       } catch (error) {
@@ -111,7 +117,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [autoEcoleId]); // Ajout de autoEcoleId comme dépendance
+  }, [urlAutoEcoleId]);
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -127,7 +133,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const role = await fetchUserRole(data.user.id);
         setUser(data.user);
         setUserRole(role);
-        navigate(autoEcoleId ? `/${autoEcoleId}` : '/');
+        
+        // Rediriger vers la page de l'auto-école si disponible
+        if (autoEcoleId) {
+          navigate(`/${autoEcoleId}`);
+        } else {
+          navigate('/');
+        }
       }
     } catch (error: any) {
       let message = 'Email ou mot de passe incorrect';
@@ -149,7 +161,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setIsAuthLoading(true);
 
-      // 1. Créer le compte auth
       const { data: { user: newUser }, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -158,7 +169,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (signUpError) throw signUpError;
       if (!newUser) throw new Error("Erreur lors de la création du compte");
 
-      // 2. Créer l'auto-école
       const { data: autoEcole, error: autoEcoleError } = await supabase
         .from('auto_ecoles')
         .insert({
@@ -169,12 +179,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single();
 
       if (autoEcoleError) {
-        // Nettoyer le compte auth si l'auto-école n'a pas pu être créée
         await supabase.auth.admin.deleteUser(newUser.id);
         throw autoEcoleError;
       }
 
-      // 3. Créer le profil utilisateur
       const { error: userError } = await supabase
         .from('utilisateurs')
         .insert({
@@ -188,22 +196,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
 
       if (userError) {
-        // Nettoyer l'auto-école et le compte auth en cas d'erreur
         await supabase.from('auto_ecoles').delete().eq('id', autoEcole.id);
         await supabase.auth.admin.deleteUser(newUser.id);
         throw userError;
       }
 
-      // 4. Connecter l'utilisateur
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-
-      if (signInError) throw signInError;
-
       setUser(newUser);
       setUserRole('admin');
+      setAutoEcoleId(autoEcole.id);
       navigate('/success');
 
     } catch (error: any) {
@@ -224,7 +224,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   return (
-    <AuthContext.Provider value={{ user, userRole, signIn, signUp, signOut, isAuthLoading }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      userRole, 
+      autoEcoleId,
+      signIn, 
+      signUp, 
+      signOut, 
+      isAuthLoading 
+    }}>
       {children}
     </AuthContext.Provider>
   );
