@@ -23,7 +23,8 @@ const Success = () => {
         .single();
 
       if (data) {
-        setAutoEcoleUrl(`${window.location.origin}/${data.id}`);
+        // Utiliser l'URL de production
+        setAutoEcoleUrl(`https://demo.verkoz.com/${data.id}`);
       }
     };
 
