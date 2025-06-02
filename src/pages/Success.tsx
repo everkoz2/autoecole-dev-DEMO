@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../supabase/client';
+import toast from 'react-hot-toast';
 
 const Success = () => {
   const { user } = useAuth();
