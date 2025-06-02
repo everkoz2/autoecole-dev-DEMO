@@ -1,5 +1,5 @@
 import React, { Fragment } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { Disclosure, Menu, Transition } from '@headlessui/react';
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,12 +11,12 @@ function classNames(...classes: string[]) {
 export default function Navigation() {
   const { user, userRole, signOut } = useAuth();
   const location = useLocation();
-
-  console.log('Navigation rendering with:', { user: !!user, userRole });
+  const { autoEcoleId } = useParams();
 
   const navigation = [
-    { name: 'Accueil', href: '/', roles: [] },
+    { name: 'Accueil', href: autoEcoleId ? `/${autoEcoleId}` : '/', roles: [] },
     { name: 'Forfaits', href: '/forfaits', roles: [] },
+    ...((!autoEcoleId && !user) ? [{ name: 'Créer une auto-école', href: '/creer-auto-ecole', roles: [] }] : []),
     { name: 'Calendrier', href: '/calendrier', roles: ['eleve', 'moniteur', 'admin'] },
     { name: 'Mes heures', href: '/mes-heures', roles: ['eleve', 'moniteur'] },
     { name: 'Mes documents', href: '/mes-documents', roles: ['eleve'] },
@@ -31,8 +31,6 @@ export default function Navigation() {
     item.roles.length === 0 || (userRole && item.roles.includes(userRole))
   );
 
-  console.log('Filtered navigation items:', filteredNavigation.length);
-
   return (
     <Disclosure as="nav" className="bg-primary-600">
       {({ open }) => (
@@ -42,7 +40,7 @@ export default function Navigation() {
               <div className="flex">
                 <div className="flex flex-shrink-0 items-center">
                   <Link to="/" className="text-white text-xl font-bold">
-                    Auto École Croussey
+                    {autoEcoleId ? 'Auto École' : 'Démo Auto École'}
                   </Link>
                 </div>
                 <div className="hidden sm:ml-6 sm:flex sm:space-x-8">

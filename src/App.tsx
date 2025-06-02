@@ -16,6 +16,7 @@ import Eleves from './pages/Eleves';
 import GestionUtilisateurs from './pages/GestionUtilisateurs';
 import Logs from './pages/Logs';
 import Success from './pages/Success';
+import CreerAutoEcole from './pages/CreerAutoEcole';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 const queryClient = new QueryClient();
@@ -44,9 +45,11 @@ function App() {
             <main className="container mx-auto px-4 py-8">
               <Routes>
                 <Route path="/" element={<Accueil />} />
+                <Route path="/:autoEcoleId" element={<Accueil />} />
                 <Route path="/forfaits" element={<Forfaits />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/success" element={<Success />} />
+                <Route path="/creer-auto-ecole" element={<CreerAutoEcole />} />
                 
                 {/* Routes protégées */}
                 <Route path="/mon-compte" element={
