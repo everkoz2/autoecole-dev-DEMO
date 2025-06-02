@@ -5,6 +5,7 @@ import { Dialog } from '@headlessui/react';
 import toast from 'react-hot-toast';
 import LivretApprentissage from './LivretApprentissage';
 import MesDocuments from './MesDocuments';
+import { useAuth } from '../contexts/AuthContext'; // Assure-toi d'avoir accès à l'utilisateur connecté
 
 interface User {
   id: string;
@@ -24,27 +25,40 @@ interface Forfait {
 }
 
 const GestionUtilisateurs = () => {
-  const queryClient = useQueryClient();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [roleFilter, setRoleFilter] = useState('tous');
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [isAppreciationModalOpen, setIsAppreciationModalOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [isDocumentsModalOpen, setIsDocumentsModalOpen] = useState(false);
-  const [selectedDocumentsUser, setSelectedDocumentsUser] = useState<User | null>(null);
+  // ...existing code...
+  const { user } = useAuth(); // Récupère l'utilisateur connecté
+
+  // Récupère l'auto_ecole_id de l'admin connecté (à adapter selon ton modèle)
+  const [autoEcoleId, setAutoEcoleId] = useState<string | null>(null);
+
+  // Va chercher l'auto_ecole_id au montage si besoin
+  useEffect(() => {
+    const fetchAutoEcoleId = async () => {
+      if (user) {
+        const { data, error } = await supabase
+          .from('utilisateurs')
+          .select('auto_ecole_id')
+          .eq('id', user.id)
+          .single();
+        if (data) setAutoEcoleId(data.auto_ecole_id);
+      }
+    };
+    fetchAutoEcoleId();
+  }, [user]);
 
   const { data: users, isLoading: isLoadingUsers } = useQuery({
-    queryKey: ['users'],
+    queryKey: ['users', autoEcoleId],
     queryFn: async () => {
+      if (!autoEcoleId) return [];
       const { data, error } = await supabase
         .from('utilisateurs')
         .select('*')
+        .eq('auto_ecole_id', autoEcoleId) // <-- Filtre ici
         .order('nom');
-
       if (error) throw error;
       return data as User[];
     },
+    enabled: !!autoEcoleId, // N'exécute la requête que si autoEcoleId est défini
   });
 
   const { data: forfaits } = useQuery({
