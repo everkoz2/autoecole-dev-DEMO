@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 interface AuthContextType {
   user: any;
   userRole: string;
+  autoEcoleId: string | null;  // Ajout de l'ID de l'auto-école
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, firstName: string, lastName: string, phone: string, nomAutoecole: string) => Promise<void>;
   signOut: () => Promise<void>;
