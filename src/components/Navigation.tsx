@@ -33,6 +33,18 @@ export default function Navigation() {
     item.roles.length === 0 || (userRole && item.roles.includes(userRole))
   );
 
+  console.log({
+    user,
+    userRole,
+    autoEcoleId,
+    filteredNavigation,
+    navigation
+  });
+
+  if (user && !userRole) {
+    return <div className="text-white bg-primary-600 p-4">Chargement du menu...</div>;
+  }
+
   return (
     <Disclosure as="nav" className="bg-primary-600">
       {({ open }) => (
