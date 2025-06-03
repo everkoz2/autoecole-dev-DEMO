@@ -31,6 +31,11 @@ const GestionUtilisateurs = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<'tous' | 'eleve' | 'moniteur' | 'admin'>('tous');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [isAppreciationModalOpen, setIsAppreciationModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [isDocumentsModalOpen, setIsDocumentsModalOpen] = useState(false);
+  const [selectedDocumentsUser, setSelectedDocumentsUser] = useState<User | null>(null);
 
   // Récupère l'auto_ecole_id de l'admin connecté (à adapter selon ton modèle)
   const [autoEcoleId, setAutoEcoleId] = useState<string | null>(null);
