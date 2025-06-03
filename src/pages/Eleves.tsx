@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../supabase/client';
 import { useAuth } from '../contexts/AuthContext';
 import { Dialog } from '@headlessui/react';
 import toast from 'react-hot-toast';
 import Navigation from '../components/Navigation';
+import { useParams, useNavigate } from 'react-router-dom';
 
 interface Eleve {
   id: string;
@@ -31,6 +32,8 @@ interface Appreciation {
 
 const Eleves = () => {
   const { user, autoEcoleId: contextAutoEcoleId } = useAuth();
+  const { autoEcoleId: urlAutoEcoleId } = useParams();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedEleve, setSelectedEleve] = useState<Eleve | null>(null);
@@ -38,6 +41,13 @@ const Eleves = () => {
   const [selectedPoint, setSelectedPoint] = useState<number | null>(null);
   const [selectedAppreciation, setSelectedAppreciation] = useState<'non acquis' | 'à revoir' | 'assimilé' | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Sécurité : redirige si l'utilisateur tente d'accéder à une auto-école qui n'est pas la sienne
+  useEffect(() => {
+    if (urlAutoEcoleId && contextAutoEcoleId && urlAutoEcoleId !== contextAutoEcoleId) {
+      navigate(`/${contextAutoEcoleId}/eleves`, { replace: true });
+    }
+  }, [urlAutoEcoleId, contextAutoEcoleId, navigate]);
 
   // On ne récupère que les élèves de la même auto-école que le moniteur
   const { data: eleves, isLoading: isLoadingEleves } = useQuery({
