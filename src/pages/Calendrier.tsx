@@ -11,6 +11,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import toast from 'react-hot-toast';
 import Navigation from '../components/Navigation';
+import { useParams, useNavigate } from 'react-router-dom';
 
 interface Heure {
   id: string;
@@ -42,7 +43,9 @@ interface HeureDetails {
 }
 
 const Calendrier = () => {
-  const { user, userRole, autoEcoleId } = useAuth();
+  const { user, userRole, autoEcoleId: contextAutoEcoleId } = useAuth();
+  const { autoEcoleId: urlAutoEcoleId } = useParams();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedHeure, setSelectedHeure] = useState<Heure | null>(null);
@@ -53,6 +56,13 @@ const Calendrier = () => {
     modele_vehicule: '',
     boite_vitesse: 'manuelle',
   });
+
+  // Sécurité : redirige si l'auto_ecole_id de l'URL ne correspond pas à celui du contexte utilisateur
+  useEffect(() => {
+    if (urlAutoEcoleId && urlAutoEcoleId !== contextAutoEcoleId) {
+      navigate(`/${contextAutoEcoleId}/calendrier`, { replace: true });
+    }
+  }, [urlAutoEcoleId, contextAutoEcoleId, navigate]);
 
   useEffect(() => {
     const heuresSubscription = supabase
@@ -65,7 +75,7 @@ const Calendrier = () => {
           table: 'heures'
         },
         () => {
-          queryClient.invalidateQueries({ queryKey: ['heures-calendrier'] });
+          queryClient.invalidateQueries({ queryKey: ['heures-calendrier', contextAutoEcoleId] });
         }
       )
       .subscribe();
@@ -73,7 +83,7 @@ const Calendrier = () => {
     return () => {
       supabase.removeChannel(heuresSubscription);
     };
-  }, [queryClient]);
+  }, [queryClient, contextAutoEcoleId]);
 
   useEffect(() => {
     if (newHeure.heure_debut) {
@@ -86,8 +96,9 @@ const Calendrier = () => {
     }
   }, [newHeure.heure_debut]);
 
+  // Utilise toujours contextAutoEcoleId pour toutes les requêtes
   const { data: heures, isLoading } = useQuery({
-    queryKey: ['heures-calendrier', autoEcoleId],
+    queryKey: ['heures-calendrier', contextAutoEcoleId],
     queryFn: async () => {
       let query = supabase
         .from('heures')
@@ -96,7 +107,7 @@ const Calendrier = () => {
           moniteur:utilisateurs!heures_moniteur_id_fkey(prenom, nom),
           eleve:utilisateurs!heures_eleve_id_fkey(prenom, nom)
         `)
-        .eq('auto_ecole_id', autoEcoleId) // Filtre par auto_ecole_id
+        .eq('auto_ecole_id', contextAutoEcoleId)
         .gte('date', new Date().toISOString().split('T')[0]);
 
       if (userRole === 'eleve') {
@@ -108,7 +119,7 @@ const Calendrier = () => {
       if (error) throw error;
       return data as Heure[];
     },
-    enabled: !!autoEcoleId, // N'exécute la requête que si autoEcoleId est défini
+    enabled: !!contextAutoEcoleId,
   });
 
   const { data: utilisateur } = useQuery({
@@ -142,13 +153,14 @@ const Calendrier = () => {
 
   const reserverHeure = useMutation({
     mutationFn: async (heureId: string) => {
-      const { error: heureError, data: heureData } = await supabase
+      const { error: heureError } = await supabase
         .from('heures')
         .update({ 
           eleve_id: user?.id,
           reserve: true
         })
         .eq('id', heureId)
+        .eq('auto_ecole_id', contextAutoEcoleId)
         .select();
 
       if (heureError) throw heureError;
@@ -157,13 +169,13 @@ const Calendrier = () => {
       if (decError) throw decError;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['heures-calendrier'] });
+      queryClient.invalidateQueries({ queryKey: ['heures-calendrier', contextAutoEcoleId] });
       queryClient.invalidateQueries({ queryKey: ['utilisateur-heures'] });
       queryClient.invalidateQueries({ queryKey: ['heures'] });
       toast.success('Heure réservée avec succès');
       setIsModalOpen(false);
     },
-    onError: (err) => {
+    onError: () => {
       toast.error('Erreur lors de la réservation');
     },
   });
@@ -177,13 +189,13 @@ const Calendrier = () => {
           moniteur_id: user?.id,
           reserve: false,
           heure_passee: false,
-          auto_ecole_id: autoEcoleId,
+          auto_ecole_id: contextAutoEcoleId,
         });
 
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['heures-calendrier', autoEcoleId] });
+      queryClient.invalidateQueries({ queryKey: ['heures-calendrier', contextAutoEcoleId] });
       toast.success('Créneau ajouté avec succès');
       setIsModalOpen(false);
     },
