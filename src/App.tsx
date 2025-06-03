@@ -34,7 +34,6 @@ function PrivateRoute({ children, roles }: { children: React.ReactNode; roles?: 
   return <>{children}</>;
 }
 
-// >>>>>>>>>>>> IL FAUT GARDER CETTE FONCTION <<<<<<<<<<<<
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -42,11 +41,18 @@ function App() {
         <AuthProvider>
           <main className="container mx-auto px-4 py-8">
             <Routes>
+              <Route path="/" element={<Accueil />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/creer-auto-ecole" element={<CreerAutoEcole />} />
               <Route path="/success" element={<Success />} />
+              
+              {/* Routes for auto-école specific pages */}
+              <Route path="/:autoEcoleId" element={<Accueil />} />
               <Route path="/:autoEcoleId/accueil" element={<Accueil />} />
               <Route path="/:autoEcoleId/forfaits" element={<Forfaits />} />
+              <Route path="/:autoEcoleId/auth" element={<Auth />} />
+              
+              {/* Protected routes that require authentication */}
               <Route path="/:autoEcoleId/gestion-utilisateurs" element={
                 <PrivateRoute roles={['admin']}>
                   <GestionUtilisateurs />
@@ -57,15 +63,44 @@ function App() {
                   <Logs />
                 </PrivateRoute>
               } />
-              <Route path="/:autoEcoleId/calendrier" element={<Calendrier />} />
-              <Route path="/:autoEcoleId/mes-heures" element={<MesHeures />} />
-              <Route path="/:autoEcoleId/mes-documents" element={<MesDocuments />} />
-              <Route path="/:autoEcoleId/livret-apprentissage" element={<LivretApprentissage />} />
-              <Route path="/:autoEcoleId/mes-factures" element={<MesFactures />} />
-              <Route path="/:autoEcoleId/eleves" element={<Eleves />} />
-              <Route path="/:autoEcoleId/mon-compte" element={<MonCompte />} />
-              {/* Ajoute ici d'autres routes si besoin */}
-              <Route path="*" element={<Navigate to="/auth" />} />
+              <Route path="/:autoEcoleId/calendrier" element={
+                <PrivateRoute roles={['eleve', 'moniteur', 'admin']}>
+                  <Calendrier />
+                </PrivateRoute>
+              } />
+              <Route path="/:autoEcoleId/mes-heures" element={
+                <PrivateRoute roles={['eleve', 'moniteur']}>
+                  <MesHeures />
+                </PrivateRoute>
+              } />
+              <Route path="/:autoEcoleId/mes-documents" element={
+                <PrivateRoute roles={['eleve']}>
+                  <MesDocuments />
+                </PrivateRoute>
+              } />
+              <Route path="/:autoEcoleId/livret-apprentissage" element={
+                <PrivateRoute roles={['eleve']}>
+                  <LivretApprentissage />
+                </PrivateRoute>
+              } />
+              <Route path="/:autoEcoleId/mes-factures" element={
+                <PrivateRoute roles={['eleve']}>
+                  <MesFactures />
+                </PrivateRoute>
+              } />
+              <Route path="/:autoEcoleId/eleves" element={
+                <PrivateRoute roles={['moniteur']}>
+                  <Eleves />
+                </PrivateRoute>
+              } />
+              <Route path="/:autoEcoleId/mon-compte" element={
+                <PrivateRoute>
+                  <MonCompte />
+                </PrivateRoute>
+              } />
+              
+              {/* Catch all route */}
+              <Route path="*" element={<Navigate to="/" />} />
             </Routes>
           </main>
           <Toaster position="top-right" />

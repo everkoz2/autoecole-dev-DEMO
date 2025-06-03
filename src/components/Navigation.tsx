@@ -9,41 +9,37 @@ function classNames(...classes: string[]) {
 }
 
 export default function Navigation() {
-  const { user, userRole, signOut } = useAuth();
+  const { user, userRole } = useAuth();
   const location = useLocation();
   const { autoEcoleId } = useParams();
 
   const navigation = [
-    { name: 'Accueil', href: autoEcoleId ? `/${autoEcoleId}/accueil` : '/', roles: [] },
-    ...((!autoEcoleId && !user) ? [{ name: 'Créer une auto-école', href: '/creer-auto-ecole', roles: [] }] : []),
+    // Home page navigation
+    ...(!autoEcoleId ? [
+      { name: 'Accueil', href: '/', roles: [] },
+      { name: 'Créer une auto-école', href: '/creer-auto-ecole', roles: [] }
+    ] : []),
+
+    // Auto-école specific navigation
     ...(autoEcoleId ? [
+      { name: 'Accueil', href: `/${autoEcoleId}/accueil`, roles: [] },
       { name: 'Forfaits', href: `/${autoEcoleId}/forfaits`, roles: [] },
-      { name: 'Calendrier', href: `/${autoEcoleId}/calendrier`, roles: ['eleve', 'moniteur', 'admin'] },
-      { name: 'Mes heures', href: `/${autoEcoleId}/mes-heures`, roles: ['eleve', 'moniteur'] },
-      { name: 'Mes documents', href: `/${autoEcoleId}/mes-documents`, roles: ['eleve'] },
-      { name: "Livret d'apprentissage", href: `/${autoEcoleId}/livret-apprentissage`, roles: ['eleve'] },
-      { name: 'Mes factures', href: `/${autoEcoleId}/mes-factures`, roles: ['eleve'] },
-      { name: 'Élèves', href: `/${autoEcoleId}/eleves`, roles: ['moniteur'] },
-      { name: 'Gestion utilisateurs', href: `/${autoEcoleId}/gestion-utilisateurs`, roles: ['admin'] },
-      { name: 'Logs', href: `/${autoEcoleId}/logs`, roles: ['admin'] },
+      ...(user ? [
+        { name: 'Calendrier', href: `/${autoEcoleId}/calendrier`, roles: ['eleve', 'moniteur', 'admin'] },
+        { name: 'Mes heures', href: `/${autoEcoleId}/mes-heures`, roles: ['eleve', 'moniteur'] },
+        { name: 'Mes documents', href: `/${autoEcoleId}/mes-documents`, roles: ['eleve'] },
+        { name: "Livret d'apprentissage", href: `/${autoEcoleId}/livret-apprentissage`, roles: ['eleve'] },
+        { name: 'Mes factures', href: `/${autoEcoleId}/mes-factures`, roles: ['eleve'] },
+        { name: 'Élèves', href: `/${autoEcoleId}/eleves`, roles: ['moniteur'] },
+        { name: 'Gestion utilisateurs', href: `/${autoEcoleId}/gestion-utilisateurs`, roles: ['admin'] },
+        { name: 'Logs', href: `/${autoEcoleId}/logs`, roles: ['admin'] },
+      ] : [])
     ] : [])
   ];
 
   const filteredNavigation = navigation.filter(item => 
     item.roles.length === 0 || (userRole && item.roles.includes(userRole))
   );
-
-  console.log({
-    user,
-    userRole,
-    autoEcoleId,
-    filteredNavigation,
-    navigation
-  });
-
-  if (user && !userRole) {
-    return <div className="text-white bg-primary-600 p-4">Chargement du menu...</div>;
-  }
 
   return (
     <Disclosure as="nav" className="bg-primary-600">
@@ -126,10 +122,10 @@ export default function Navigation() {
                   </Menu>
                 ) : autoEcoleId ? (
                   <Link
-                    to="/auth"
+                    to={`/${autoEcoleId}/auth`}
                     className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
                   >
-                    Se connecter
+                    Se connecter / Créer un compte
                   </Link>
                 ) : null}
               </div>
@@ -185,10 +181,10 @@ export default function Navigation() {
               ) : autoEcoleId ? (
                 <Disclosure.Button
                   as={Link}
-                  to="/auth"
+                  to={`/${autoEcoleId}/auth`}
                   className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-primary-700 hover:text-white"
                 >
-                  Se connecter
+                  Se connecter / Créer un compte
                 </Disclosure.Button>
               ) : null}
             </div>
