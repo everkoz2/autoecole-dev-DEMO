@@ -160,7 +160,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     firstName: string,
     lastName: string,
     phone: string,
-    nomAutoecole?: string
+    autoEcoleId?: string // <-- ici
   ) => {
     try {
       setIsAuthLoading(true);
@@ -173,27 +173,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (signUpError) throw signUpError;
       if (!newUser) throw new Error("Erreur lors de la création du compte");
 
-      let autoEcoleIdToUse = urlAutoEcoleId;
-
-      // Si on crée une nouvelle auto-école
-      if (nomAutoecole) {
-        const { data: autoEcole, error: autoEcoleError } = await supabase
-          .from('auto_ecoles')
-          .insert({
-            nom: nomAutoecole,
-            admin_id: newUser.id
-          })
-          .select()
-          .single();
-
-        if (autoEcoleError) {
-          await supabase.auth.admin.deleteUser(newUser.id);
-          throw autoEcoleError;
-        }
-
-        autoEcoleIdToUse = autoEcole.id;
-      }
-
+      // On ne crée PAS de nouvelle auto-école ici
+      // On utilise simplement l'id passé en paramètre
       const { error: userError } = await supabase
         .from('utilisateurs')
         .insert({
@@ -202,26 +183,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           prenom: firstName,
           nom: lastName,
           telephone: phone,
-          role: nomAutoecole ? 'admin' : 'eleve',
-          auto_ecole_id: autoEcoleIdToUse
+          role: 'eleve',
+          auto_ecole_id: autoEcoleId // <-- c'est tout !
         });
 
       if (userError) {
-        if (nomAutoecole) {
-          await supabase.from('auto_ecoles').delete().eq('id', autoEcoleIdToUse);
-        }
         await supabase.auth.admin.deleteUser(newUser.id);
         throw userError;
       }
 
       setUser(newUser);
-      setUserRole(nomAutoecole ? 'admin' : 'eleve');
-      setAutoEcoleId(autoEcoleIdToUse);
+      setUserRole('eleve');
+      setAutoEcoleId(autoEcoleId || null);
 
-      if (nomAutoecole) {
-        navigate('/success');
-      } else if (autoEcoleIdToUse) {
-        navigate(`/${autoEcoleIdToUse}`);
+      if (autoEcoleId) {
+        navigate(`/${autoEcoleId}`);
       } else {
         navigate('/');
       }
