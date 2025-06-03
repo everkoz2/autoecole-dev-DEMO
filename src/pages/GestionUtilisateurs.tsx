@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../supabase/client';
 import { Dialog } from '@headlessui/react';
@@ -6,8 +6,8 @@ import toast from 'react-hot-toast';
 import LivretApprentissage from './LivretApprentissage';
 import MesDocuments from './MesDocuments';
 import { useAuth } from '../contexts/AuthContext';
-import { useParams } from 'react-router-dom';
-import Navigation from '../components/Navigation'; // AJOUT
+import { useParams, useNavigate } from 'react-router-dom';
+import Navigation from '../components/Navigation';
 
 interface User {
   id: string;
@@ -27,8 +27,17 @@ interface Forfait {
 }
 
 const GestionUtilisateurs = () => {
-  const { user } = useAuth();
-  const { autoEcoleId } = useParams();
+  const { user, autoEcoleId: contextAutoEcoleId } = useAuth();
+  const { autoEcoleId: urlAutoEcoleId } = useParams();
+  const navigate = useNavigate();
+
+  // Redirection si l'auto_ecole_id de l'URL ne correspond pas à celui du contexte utilisateur
+  useEffect(() => {
+    if (urlAutoEcoleId && urlAutoEcoleId !== contextAutoEcoleId) {
+      navigate(`/${contextAutoEcoleId}/gestion-utilisateurs`, { replace: true });
+    }
+    // eslint-disable-next-line
+  }, [urlAutoEcoleId, contextAutoEcoleId]);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<'tous' | 'eleve' | 'moniteur' | 'admin'>('tous');
@@ -41,30 +50,34 @@ const GestionUtilisateurs = () => {
 
   const queryClient = useQueryClient();
 
+  // Utilise toujours l'auto_ecole_id du contexte utilisateur pour filtrer
   const { data: users, isLoading: isLoadingUsers } = useQuery({
-    queryKey: ['users', autoEcoleId],
+    queryKey: ['users', contextAutoEcoleId],
     queryFn: async () => {
-      if (!autoEcoleId) return [];
+      if (!contextAutoEcoleId) return [];
       const { data, error } = await supabase
         .from('utilisateurs')
         .select('*')
-        .eq('auto_ecole_id', autoEcoleId)
+        .eq('auto_ecole_id', contextAutoEcoleId)
         .order('nom');
       if (error) throw error;
       return data as User[];
     },
-    enabled: !!autoEcoleId,
+    enabled: !!contextAutoEcoleId,
   });
 
   const { data: forfaits } = useQuery({
-    queryKey: ['forfaits'],
+    queryKey: ['forfaits', contextAutoEcoleId],
     queryFn: async () => {
+      if (!contextAutoEcoleId) return [];
       const { data, error } = await supabase
         .from('forfaits')
-        .select('id, nom');
+        .select('id, nom')
+        .eq('auto_ecole_id', contextAutoEcoleId);
       if (error) throw error;
       return data as Forfait[];
     },
+    enabled: !!contextAutoEcoleId,
   });
 
   const updateUser = useMutation({
@@ -79,11 +92,12 @@ const GestionUtilisateurs = () => {
           forfait_id: user.forfait_id,
           heures_restantes: user.heures_restantes,
         })
-        .eq('id', user.id);
+        .eq('id', user.id)
+        .eq('auto_ecole_id', contextAutoEcoleId); // Sécurise la requête
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['users', contextAutoEcoleId] });
       toast.success('Utilisateur modifié avec succès');
       setIsEditModalOpen(false);
       setEditingUser(null);
@@ -133,7 +147,7 @@ const GestionUtilisateurs = () => {
           <div className="flex space-x-4">
             <select
               value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value)}
+              onChange={(e) => setRoleFilter(e.target.value as any)}
               className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               <option value="tous">Tous les utilisateurs</option>
