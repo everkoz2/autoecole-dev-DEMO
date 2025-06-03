@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../supabase/client';
 import { useAuth } from '../contexts/AuthContext';
@@ -6,6 +6,7 @@ import { Dialog } from '@headlessui/react';
 import toast from 'react-hot-toast';
 import { useStripe } from '../hooks/useStripe';
 import Navigation from '../components/Navigation';
+import { useParams, useNavigate } from 'react-router-dom';
 
 interface Forfait {
   id: number;
@@ -22,25 +23,35 @@ interface ForfaitFormData {
 }
 
 const Forfaits = () => {
-  const { user, userRole, autoEcoleId } = useAuth();
+  const { user, userRole, autoEcoleId: contextAutoEcoleId } = useAuth();
+  const { autoEcoleId: urlAutoEcoleId } = useParams();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingForfait, setEditingForfait] = useState<ForfaitFormData | null>(null);
   const { checkout, isLoading } = useStripe();
 
+  // Sécurité : redirige si l'auto_ecole_id de l'URL ne correspond pas à celui du contexte utilisateur
+  useEffect(() => {
+    if (urlAutoEcoleId && urlAutoEcoleId !== contextAutoEcoleId) {
+      navigate(`/${contextAutoEcoleId}/forfaits`, { replace: true });
+    }
+  }, [urlAutoEcoleId, contextAutoEcoleId, navigate]);
+
+  // Utilise toujours contextAutoEcoleId pour toutes les requêtes
   const { data: forfaits, isLoading: isLoadingForfaits } = useQuery({
-    queryKey: ['forfaits', autoEcoleId],
+    queryKey: ['forfaits', contextAutoEcoleId],
     queryFn: async () => {
-      if (!autoEcoleId) return [];
+      if (!contextAutoEcoleId) return [];
       const { data, error } = await supabase
         .from('forfaits')
-        .select('*')
-        .eq('auto_ecole_id', autoEcoleId) // Filtre par auto_ecole_id
+        .select('id, nom, description, prix')
+        .eq('auto_ecole_id', contextAutoEcoleId)
         .order('prix');
       if (error) throw error;
       return data as Forfait[];
     },
-    enabled: !!autoEcoleId, // N'exécute la requête que si autoEcoleId est défini
+    enabled: !!contextAutoEcoleId,
   });
 
   const handleCheckout = async (forfaitId: number) => {
@@ -68,12 +79,12 @@ const Forfaits = () => {
           nom: forfait.nom,
           description: forfait.description,
           prix: parseFloat(forfait.prix),
-          auto_ecole_id: autoEcoleId,
+          auto_ecole_id: contextAutoEcoleId,
         });
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['forfaits', autoEcoleId] });
+      queryClient.invalidateQueries({ queryKey: ['forfaits', contextAutoEcoleId] });
       toast.success('Forfait créé avec succès');
       setIsModalOpen(false);
       setEditingForfait(null);
@@ -91,13 +102,13 @@ const Forfaits = () => {
           nom: forfait.nom,
           description: forfait.description,
           prix: parseFloat(forfait.prix),
-          auto_ecole_id: autoEcoleId,
+          auto_ecole_id: contextAutoEcoleId,
         })
         .eq('id', forfait.id);
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['forfaits', autoEcoleId] });
+      queryClient.invalidateQueries({ queryKey: ['forfaits', contextAutoEcoleId] });
       toast.success('Forfait modifié avec succès');
       setIsModalOpen(false);
       setEditingForfait(null);
@@ -112,11 +123,12 @@ const Forfaits = () => {
       const { error } = await supabase
         .from('forfaits')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .eq('auto_ecole_id', contextAutoEcoleId);
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['forfaits', autoEcoleId] });
+      queryClient.invalidateQueries({ queryKey: ['forfaits', contextAutoEcoleId] });
       toast.success('Forfait supprimé avec succès');
     },
     onError: () => {
@@ -211,7 +223,7 @@ const Forfaits = () => {
                         </button>
                         <button
                           onClick={() => {
-                            if (confirm('Êtes-vous sûr de vouloir supprimer ce forfait ?')) {
+                            if (window.confirm('Êtes-vous sûr de vouloir supprimer ce forfait ?')) {
                               deleteForfait.mutate(forfait.id);
                             }
                           }}
