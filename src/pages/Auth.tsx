@@ -27,7 +27,7 @@ const Auth = () => {
         if (password.length < 6) {
           throw new Error('Le mot de passe doit contenir au moins 6 caractères');
         }
-        await signUp(email, password, firstName, lastName, phone);
+        await signUp(email, password, firstName, lastName, phone, autoEcoleId);
       }
 
       // Redirect to the auto-école home page if we have an autoEcoleId
