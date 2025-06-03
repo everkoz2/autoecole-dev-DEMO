@@ -14,7 +14,7 @@ export default function Navigation() {
   const { autoEcoleId } = useParams();
 
   const navigation = [
-    { name: 'Accueil', href: autoEcoleId ? `/${autoEcoleId}` : '/', roles: [] },
+    { name: 'Accueil', href: autoEcoleId ? `/${autoEcoleId}/accueil` : '/', roles: [] },
     ...((!autoEcoleId && !user) ? [{ name: 'Créer une auto-école', href: '/creer-auto-ecole', roles: [] }] : []),
     ...(autoEcoleId ? [
       { name: 'Forfaits', href: `/${autoEcoleId}/forfaits`, roles: [] },
