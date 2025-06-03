@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import React, { useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../supabase/client';
 import { useAuth } from '../contexts/AuthContext';
 import Navigation from '../components/Navigation';
 import toast from 'react-hot-toast';
+import { useParams, useNavigate } from 'react-router-dom';
 
 interface Forfait {
   id: number;
@@ -14,7 +15,16 @@ interface Forfait {
 }
 
 const Forfaits = () => {
-  const { user, userRole } = useAuth();
+  const { user, userRole, autoEcoleId: contextAutoEcoleId } = useAuth();
+  const { autoEcoleId: urlAutoEcoleId } = useParams();
+  const navigate = useNavigate();
+
+  // Sécurité : redirige si l'utilisateur tente d'accéder à une auto-école qui n'est pas la sienne
+  useEffect(() => {
+    if (urlAutoEcoleId && contextAutoEcoleId && urlAutoEcoleId !== contextAutoEcoleId) {
+      navigate(`/${contextAutoEcoleId}/forfaits`, { replace: true });
+    }
+  }, [urlAutoEcoleId, contextAutoEcoleId, navigate]);
 
   // Récupère tous les forfaits
   const { data: forfaits, isLoading } = useQuery({
