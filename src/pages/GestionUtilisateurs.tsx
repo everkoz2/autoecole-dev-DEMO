@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import LivretApprentissage from './LivretApprentissage';
 import MesDocuments from './MesDocuments';
 import { useAuth } from '../contexts/AuthContext'; // Assure-toi d'avoir accès à l'utilisateur connecté
+import { useParams } from 'react-router-dom';
 
 interface User {
   id: string;
@@ -25,8 +26,8 @@ interface Forfait {
 }
 
 const GestionUtilisateurs = () => {
-  // ...existing code...
-  const { user } = useAuth(); // Récupère l'utilisateur connecté
+  const { user } = useAuth();
+  const { autoEcoleId } = useParams(); // <-- récupère l'ID depuis l'URL
 
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<'tous' | 'eleve' | 'moniteur' | 'admin'>('tous');
@@ -37,23 +38,7 @@ const GestionUtilisateurs = () => {
   const [isDocumentsModalOpen, setIsDocumentsModalOpen] = useState(false);
   const [selectedDocumentsUser, setSelectedDocumentsUser] = useState<User | null>(null);
 
-  // Récupère l'auto_ecole_id de l'admin connecté (à adapter selon ton modèle)
-  const [autoEcoleId, setAutoEcoleId] = useState<string | null>(null);
-
-  // Va chercher l'auto_ecole_id au montage si besoin
-  useEffect(() => {
-    const fetchAutoEcoleId = async () => {
-      if (user) {
-        const { data, error } = await supabase
-          .from('utilisateurs')
-          .select('auto_ecole_id')
-          .eq('id', user.id)
-          .single();
-        if (data) setAutoEcoleId(data.auto_ecole_id);
-      }
-    };
-    fetchAutoEcoleId();
-  }, [user]);
+  // SUPPRIME tout le useEffect/fetchAutoEcoleId
 
   const { data: users, isLoading: isLoadingUsers } = useQuery({
     queryKey: ['users', autoEcoleId],
@@ -67,7 +52,7 @@ const GestionUtilisateurs = () => {
       if (error) throw error;
       return data as User[];
     },
-    enabled: !!autoEcoleId, // N'exécute la requête que si autoEcoleId est défini
+    enabled: !!autoEcoleId,
   });
 
   const { data: forfaits } = useQuery({
