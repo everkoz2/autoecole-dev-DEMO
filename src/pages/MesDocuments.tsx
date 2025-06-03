@@ -26,7 +26,7 @@ const documentTypes = {
 };
 
 const MesDocuments = ({ userId, isAdmin }: MesDocumentsProps) => {
-  const { user } = useAuth();
+  const { user, autoEcoleId } = useAuth();
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
@@ -42,6 +42,7 @@ const MesDocuments = ({ userId, isAdmin }: MesDocumentsProps) => {
         .from('documents')
         .select('*')
         .eq('eleve_id', userId ?? user?.id)
+        .eq('auto_ecole_id', autoEcoleId)
         .order('uploaded_at', { ascending: false });
 
       if (error) throw error;
@@ -92,6 +93,7 @@ const MesDocuments = ({ userId, isAdmin }: MesDocumentsProps) => {
           eleve_id: userId ?? user?.id,
           type,
           url: publicUrl,
+          auto_ecole_id: autoEcoleId,
         });
 
       if (dbError) throw dbError;
@@ -120,6 +122,7 @@ const MesDocuments = ({ userId, isAdmin }: MesDocumentsProps) => {
           eleve_id: userId ?? user?.id,
           type: 'neph',
           url: nephNumber,
+          auto_ecole_id: autoEcoleId
         });
 
       if (dbError) throw dbError;
