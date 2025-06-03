@@ -13,6 +13,7 @@ interface Eleve {
   email: string;
   telephone: string;
   heures_effectuees: number;
+  auto_ecole_id?: string;
 }
 
 interface Point {
@@ -29,7 +30,7 @@ interface Appreciation {
 }
 
 const Eleves = () => {
-  const { user } = useAuth();
+  const { user, autoEcoleId: contextAutoEcoleId } = useAuth();
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedEleve, setSelectedEleve] = useState<Eleve | null>(null);
@@ -38,13 +39,16 @@ const Eleves = () => {
   const [selectedAppreciation, setSelectedAppreciation] = useState<'non acquis' | 'à revoir' | 'assimilé' | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
 
+  // On ne récupère que les élèves de la même auto-école que le moniteur
   const { data: eleves, isLoading: isLoadingEleves } = useQuery({
-    queryKey: ['eleves'],
+    queryKey: ['eleves', contextAutoEcoleId],
     queryFn: async () => {
+      if (!contextAutoEcoleId) return [];
       const { data: utilisateurs, error: userError } = await supabase
         .from('utilisateurs')
-        .select('id, prenom, nom, email, telephone')
-        .eq('role', 'eleve');
+        .select('id, prenom, nom, email, telephone, auto_ecole_id')
+        .eq('role', 'eleve')
+        .eq('auto_ecole_id', contextAutoEcoleId);
 
       if (userError) throw userError;
 
@@ -80,7 +84,7 @@ const Eleves = () => {
     },
   });
 
-  const { data: appreciations, isLoading: isLoadingAppreciations } = useQuery({
+  const { data: appreciations } = useQuery({
     queryKey: ['appreciations', selectedEleve?.id],
     queryFn: async () => {
       if (!selectedEleve) return [];
