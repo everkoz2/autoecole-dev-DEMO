@@ -34,4 +34,45 @@ function PrivateRoute({ children, roles }: { children: React.ReactNode; roles?: 
   return <>{children}</>;
 }
 
+// >>>>>>>>>>>> IL FAUT GARDER CETTE FONCTION <<<<<<<<<<<<
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <Router>
+        <AuthProvider>
+          <main className="container mx-auto px-4 py-8">
+            <Routes>
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/creer-auto-ecole" element={<CreerAutoEcole />} />
+              <Route path="/success" element={<Success />} />
+              <Route path="/:autoEcoleId/accueil" element={<Accueil />} />
+              <Route path="/:autoEcoleId/forfaits" element={<Forfaits />} />
+              <Route path="/:autoEcoleId/gestion-utilisateurs" element={
+                <PrivateRoute roles={['admin']}>
+                  <GestionUtilisateurs />
+                </PrivateRoute>
+              } />
+              <Route path="/:autoEcoleId/logs" element={
+                <PrivateRoute roles={['admin']}>
+                  <Logs />
+                </PrivateRoute>
+              } />
+              <Route path="/:autoEcoleId/calendrier" element={<Calendrier />} />
+              <Route path="/:autoEcoleId/mes-heures" element={<MesHeures />} />
+              <Route path="/:autoEcoleId/mes-documents" element={<MesDocuments />} />
+              <Route path="/:autoEcoleId/livret-apprentissage" element={<LivretApprentissage />} />
+              <Route path="/:autoEcoleId/mes-factures" element={<MesFactures />} />
+              <Route path="/:autoEcoleId/eleves" element={<Eleves />} />
+              <Route path="/:autoEcoleId/mon-compte" element={<MonCompte />} />
+              {/* Ajoute ici d'autres routes si besoin */}
+              <Route path="*" element={<Navigate to="/auth" />} />
+            </Routes>
+          </main>
+          <Toaster position="top-right" />
+        </AuthProvider>
+      </Router>
+    </QueryClientProvider>
+  );
+}
+
 export default App;
