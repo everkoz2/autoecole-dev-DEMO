@@ -160,11 +160,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     firstName: string,
     lastName: string,
     phone: string,
-    autoEcoleId?: string // <-- ici
+    autoEcoleIdOrNom?: string // <-- peut être un nom ou un id
   ) => {
     try {
       setIsAuthLoading(true);
 
+      // Création du compte dans Supabase Auth
       const { data: { user: newUser }, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
@@ -173,8 +174,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (signUpError) throw signUpError;
       if (!newUser) throw new Error("Erreur lors de la création du compte");
 
-      // On ne crée PAS de nouvelle auto-école ici
-      // On utilise simplement l'id passé en paramètre
+      let autoEcoleId = autoEcoleIdOrNom;
+
+      // Si c'est une création d'auto-école (on reçoit un nom, pas un UUID)
+      if (autoEcoleIdOrNom && !/^[0-9a-fA-F-]{36}$/.test(autoEcoleIdOrNom)) {
+        // Créer l'auto-école et récupérer son id
+        const { data: autoEcole, error: autoEcoleError } = await supabase
+          .from('auto_ecoles')
+          .insert({ nom: autoEcoleIdOrNom })
+          .select()
+          .single();
+
+        if (autoEcoleError) {
+          // Nettoyage: supprime l'utilisateur auth si la création auto-école échoue
+          await supabase.auth.admin.deleteUser(newUser.id);
+          throw autoEcoleError;
+        }
+        autoEcoleId = autoEcole.id;
+      }
+
+      // Création de l'utilisateur dans la table utilisateurs
       const { error: userError } = await supabase
         .from('utilisateurs')
         .insert({
@@ -183,8 +202,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           prenom: firstName,
           nom: lastName,
           telephone: phone,
-          role: 'eleve',
-          auto_ecole_id: autoEcoleId // <-- c'est tout !
+          role: autoEcoleIdOrNom && !/^[0-9a-fA-F-]{36}$/.test(autoEcoleIdOrNom) ? 'admin' : 'eleve',
+          auto_ecole_id: autoEcoleId
         });
 
       if (userError) {
@@ -193,11 +212,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       setUser(newUser);
-      setUserRole('eleve');
+      setUserRole(autoEcoleIdOrNom && !/^[0-9a-fA-F-]{36}$/.test(autoEcoleIdOrNom) ? 'admin' : 'eleve');
       setAutoEcoleId(autoEcoleId || null);
 
       if (autoEcoleId) {
-        navigate(`/${autoEcoleId}`);
+        navigate(`/${autoEcoleId}/accueil`);
       } else {
         navigate('/');
       }
