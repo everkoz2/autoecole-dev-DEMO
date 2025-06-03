@@ -64,7 +64,7 @@ export default function Navigation() {
               </div>
               <div className="hidden sm:ml-6 sm:flex sm:items-center">
                 {user ? (
-                  <Menu as="div\" className="relative ml-3">
+                  <Menu as="div" className="relative ml-3">
                     <div>
                       <Menu.Button className="flex rounded-full bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2">
                         <span className="sr-only">Open user menu</span>
@@ -112,14 +112,14 @@ export default function Navigation() {
                       </Menu.Items>
                     </Transition>
                   </Menu>
-                ) : (
+                ) : autoEcoleId ? (
                   <Link
                     to="/auth"
                     className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
                   >
                     Se connecter
                   </Link>
-                )}
+                ) : null}
               </div>
               <div className="-mr-2 flex items-center sm:hidden">
                 <Disclosure.Button className="inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-primary-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white">
@@ -170,7 +170,7 @@ export default function Navigation() {
                     Se déconnecter
                   </Disclosure.Button>
                 </div>
-              ) : (
+              ) : autoEcoleId ? (
                 <Disclosure.Button
                   as={Link}
                   to="/auth"
@@ -178,7 +178,7 @@ export default function Navigation() {
                 >
                   Se connecter
                 </Disclosure.Button>
-              )}
+              ) : null}
             </div>
           </Disclosure.Panel>
         </>
