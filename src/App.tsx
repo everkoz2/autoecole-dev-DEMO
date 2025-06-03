@@ -51,65 +51,55 @@ function App() {
                 <Route path="/success" element={<Success />} />
 
                 {/* Routes avec auto-école */}
-                <Route path="/:autoEcoleId">
-                  <Route index element={<Accueil />} />
-                  <Route path="forfaits" element={<Forfaits />} />
-                  
-                  {/* Routes protégées */}
-                  <Route path="mon-compte" element={
-                    <PrivateRoute>
-                      <MonCompte />
-                    </PrivateRoute>
-                  } />
-                  <Route path="calendrier" element={
-                    <PrivateRoute>
-                      <Calendrier />
-                    </PrivateRoute>
-                  } />
-
-                  {/* Routes Élève et Moniteur */}
-                  <Route path="mes-heures" element={
-                    <PrivateRoute roles={['eleve', 'moniteur']}>
-                      <MesHeures />
-                    </PrivateRoute>
-                  } />
-
-                  {/* Routes Élève */}
-                  <Route path="mes-documents" element={
-                    <PrivateRoute roles={['eleve']}>
-                      <MesDocuments />
-                    </PrivateRoute>
-                  } />
-                  <Route path="livret-apprentissage" element={
-                    <PrivateRoute roles={['eleve']}>
-                      <LivretApprentissage />
-                    </PrivateRoute>
-                  } />
-                  <Route path="mes-factures" element={
-                    <PrivateRoute roles={['eleve']}>
-                      <MesFactures />
-                    </PrivateRoute>
-                  } />
-
-                  {/* Routes Moniteur */}
-                  <Route path="eleves" element={
-                    <PrivateRoute roles={['moniteur']}>
-                      <Eleves />
-                    </PrivateRoute>
-                  } />
-
-                  {/* Routes Admin */}
-                  <Route path="gestion-utilisateurs" element={
-                    <PrivateRoute roles={['admin']}>
-                      <GestionUtilisateurs />
-                    </PrivateRoute>
-                  } />
-                  <Route path="logs" element={
-                    <PrivateRoute roles={['admin']}>
-                      <Logs />
-                    </PrivateRoute>
-                  } />
-                </Route>
+                <Route path="/:autoEcoleId/accueil" element={<Accueil />} />
+                <Route path="/:autoEcoleId/forfaits" element={<Forfaits />} />
+                <Route path="/:autoEcoleId/mon-compte" element={
+                  <PrivateRoute>
+                    <MonCompte />
+                  </PrivateRoute>
+                } />
+                <Route path="/:autoEcoleId/calendrier" element={
+                  <PrivateRoute>
+                    <Calendrier />
+                  </PrivateRoute>
+                } />
+                <Route path="/:autoEcoleId/mes-heures" element={
+                  <PrivateRoute roles={['eleve', 'moniteur']}>
+                    <MesHeures />
+                  </PrivateRoute>
+                } />
+                <Route path="/:autoEcoleId/mes-documents" element={
+                  <PrivateRoute roles={['eleve']}>
+                    <MesDocuments />
+                  </PrivateRoute>
+                } />
+                <Route path="/:autoEcoleId/livret-apprentissage" element={
+                  <PrivateRoute roles={['eleve']}>
+                    <LivretApprentissage />
+                  </PrivateRoute>
+                } />
+                <Route path="/:autoEcoleId/mes-factures" element={
+                  <PrivateRoute roles={['eleve']}>
+                    <MesFactures />
+                  </PrivateRoute>
+                } />
+                <Route path="/:autoEcoleId/eleves" element={
+                  <PrivateRoute roles={['moniteur']}>
+                    <Eleves />
+                  </PrivateRoute>
+                } />
+                <Route path="/:autoEcoleId/gestion-utilisateurs" element={
+                  <PrivateRoute roles={['admin']}>
+                    <GestionUtilisateurs />
+                  </PrivateRoute>
+                } />
+                <Route path="/:autoEcoleId/logs" element={
+                  <PrivateRoute roles={['admin']}>
+                    <Logs />
+                  </PrivateRoute>
+                } />
+                {/* Redirection pour /:autoEcoleId vers /:autoEcoleId/accueil */}
+                <Route path="/:autoEcoleId" element={<Navigate to={`/${window.location.pathname.split('/')[1]}/accueil`} />} />
               </Routes>
             </main>
           </div>
