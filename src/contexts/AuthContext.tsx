@@ -178,7 +178,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Si c'est une création d'auto-école (on reçoit un nom, pas un UUID)
       if (autoEcoleIdOrNom && !/^[0-9a-fA-F-]{36}$/.test(autoEcoleIdOrNom)) {
-        // Créer l'auto-école et récupérer son id
+        // 1. Créer l'auto-école et récupérer son id
         const { data: autoEcole, error: autoEcoleError } = await supabase
           .from('auto_ecoles')
           .insert({ nom: autoEcoleIdOrNom })
@@ -191,9 +191,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           throw autoEcoleError;
         }
         autoEcoleId = autoEcole.id;
+
+        // 2. Créer l'utilisateur dans la table utilisateurs
+        const { error: userError } = await supabase
+          .from('utilisateurs')
+          .insert({
+            id: newUser.id,
+            email,
+            prenom: firstName,
+            nom: lastName,
+            telephone: phone,
+            role: 'admin',
+            auto_ecole_id: autoEcoleId
+          });
+
+        if (userError) {
+          await supabase.auth.admin.deleteUser(newUser.id);
+          throw userError;
+        }
+
+        // 3. Mettre à jour l'auto-école pour renseigner l'admin_id
+        const { error: updateAdminError } = await supabase
+          .from('auto_ecoles')
+          .update({ admin_id: newUser.id })
+          .eq('id', autoEcoleId);
+
+        if (updateAdminError) {
+          // Optionnel : tu peux afficher une erreur ou juste un warning
+          console.warn('Erreur lors de la mise à jour de admin_id:', updateAdminError);
+        }
+
+        setUser(newUser);
+        setUserRole('admin');
+        setAutoEcoleId(autoEcoleId || null);
+
+        if (autoEcoleId) {
+          navigate(`/${autoEcoleId}/accueil`);
+        } else {
+          navigate('/');
+        }
+        return;
       }
 
-      // Création de l'utilisateur dans la table utilisateurs
+      // Cas inscription élève (autoEcoleIdOrNom est un UUID)
       const { error: userError } = await supabase
         .from('utilisateurs')
         .insert({
@@ -202,7 +242,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           prenom: firstName,
           nom: lastName,
           telephone: phone,
-          role: autoEcoleIdOrNom && !/^[0-9a-fA-F-]{36}$/.test(autoEcoleIdOrNom) ? 'admin' : 'eleve',
+          role: 'eleve',
           auto_ecole_id: autoEcoleId
         });
 
@@ -212,7 +252,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       setUser(newUser);
-      setUserRole(autoEcoleIdOrNom && !/^[0-9a-fA-F-]{36}$/.test(autoEcoleIdOrNom) ? 'admin' : 'eleve');
+      setUserRole('eleve');
       setAutoEcoleId(autoEcoleId || null);
 
       if (autoEcoleId) {
