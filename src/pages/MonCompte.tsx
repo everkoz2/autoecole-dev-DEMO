@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Dialog } from '@headlessui/react';
 import toast from 'react-hot-toast';
 import bcrypt from 'bcryptjs';
+import Navigation from '../components/Navigation'; // AJOUT
 
 interface UserInfo {
   id: string;
@@ -79,8 +80,6 @@ const MonCompte = () => {
 
       if (error) throw error;
 
-      console.log('stats:', stats);
-
       const heuresPassees = stats.filter(h => h.heure_passee).length;
 
       const heuresAVenir = stats.filter(h => {
@@ -88,7 +87,6 @@ const MonCompte = () => {
         const dateHeure = h.heure_debut
           ? new Date(`${h.date} ${h.heure_debut}`)
           : new Date(h.date);
-        console.log('dateHeure:', dateHeure, 'now:', now, 'keep:', dateHeure > now, h);
         return dateHeure > now;
       }).length;
 
@@ -165,70 +163,91 @@ const MonCompte = () => {
 
   if (isLoadingUser || isLoadingStats || isLoadingForfait) {
     return (
-      <div className="flex justify-center items-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
+      <>
+        <Navigation />
+        <div className="flex justify-center items-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        </div>
+      </>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">Mon compte</h1>
+    <>
+      <Navigation />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">Mon compte</h1>
 
-      <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-        <div className="px-4 py-5 sm:px-6">
-          <h2 className="text-lg leading-6 font-medium text-gray-900">
-            Informations personnelles
-          </h2>
-          <p className="mt-1 max-w-2xl text-sm text-gray-500">
-            Vos informations de profil
-          </p>
-        </div>
-        <div className="border-t border-gray-200 px-4 py-5 sm:px-6">
-          <dl className="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
-            <div>
-              <dt className="text-sm font-medium text-gray-500">Nom complet</dt>
-              <dd className="mt-1 text-sm text-gray-900">
-                {userInfo?.prenom} {userInfo?.nom}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-sm font-medium text-gray-500">Email</dt>
-              <dd className="mt-1 text-sm text-gray-900">{userInfo?.email}</dd>
-            </div>
-            <div>
-              <dt className="text-sm font-medium text-gray-500">Téléphone</dt>
-              <dd className="mt-1 text-sm text-gray-900">{userInfo?.telephone || 'Non renseigné'}</dd>
-            </div>
-            <div>
-              <dt className="text-sm font-medium text-gray-500">Rôle</dt>
-              <dd className="mt-1 text-sm text-gray-900">
-                {userInfo?.role === 'eleve' ? 'Élève' : 
-                 userInfo?.role === 'moniteur' ? 'Moniteur' : 'Administrateur'}
-              </dd>
-            </div>
-            {userRole === 'eleve' && (
-              <>
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Forfait actuel</dt>
-                  <dd className="mt-1 text-sm text-gray-900">
-                    {forfait ? (
-                      <>
-                        <div>{forfait.nom}</div>
-                        <div className="text-gray-500">{forfait.description}</div>
-                      </>
-                    ) : (
-                      'Aucun forfait'
-                    )}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-sm font-medium text-gray-500">Heures de conduite</dt>
+        <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+          <div className="px-4 py-5 sm:px-6">
+            <h2 className="text-lg leading-6 font-medium text-gray-900">
+              Informations personnelles
+            </h2>
+            <p className="mt-1 max-w-2xl text-sm text-gray-500">
+              Vos informations de profil
+            </p>
+          </div>
+          <div className="border-t border-gray-200 px-4 py-5 sm:px-6">
+            <dl className="grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
+              <div>
+                <dt className="text-sm font-medium text-gray-500">Nom complet</dt>
+                <dd className="mt-1 text-sm text-gray-900">
+                  {userInfo?.prenom} {userInfo?.nom}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-sm font-medium text-gray-500">Email</dt>
+                <dd className="mt-1 text-sm text-gray-900">{userInfo?.email}</dd>
+              </div>
+              <div>
+                <dt className="text-sm font-medium text-gray-500">Téléphone</dt>
+                <dd className="mt-1 text-sm text-gray-900">{userInfo?.telephone || 'Non renseigné'}</dd>
+              </div>
+              <div>
+                <dt className="text-sm font-medium text-gray-500">Rôle</dt>
+                <dd className="mt-1 text-sm text-gray-900">
+                  {userInfo?.role === 'eleve' ? 'Élève' : 
+                  userInfo?.role === 'moniteur' ? 'Moniteur' : 'Administrateur'}
+                </dd>
+              </div>
+              {userRole === 'eleve' && (
+                <>
+                  <div>
+                    <dt className="text-sm font-medium text-gray-500">Forfait actuel</dt>
+                    <dd className="mt-1 text-sm text-gray-900">
+                      {forfait ? (
+                        <>
+                          <div>{forfait.nom}</div>
+                          <div className="text-gray-500">{forfait.description}</div>
+                        </>
+                      ) : (
+                        'Aucun forfait'
+                      )}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm font-medium text-gray-500">Heures de conduite</dt>
+                    <dd className="mt-1 text-sm space-y-1">
+                      <div className="flex justify-between">
+                        <span>Heures restantes:</span>
+                        <span className="font-medium">{userInfo?.heures_restantes}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Heures effectuées:</span>
+                        <span className="font-medium">{heuresStats?.heures_passees}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Heures à venir:</span>
+                        <span className="font-medium">{heuresStats?.heures_a_venir}</span>
+                      </div>
+                    </dd>
+                  </div>
+                </>
+              )}
+              {userRole === 'moniteur' && (
+                <div className="sm:col-span-2">
+                  <dt className="text-sm font-medium text-gray-500">Statistiques des heures</dt>
                   <dd className="mt-1 text-sm space-y-1">
-                    <div className="flex justify-between">
-                      <span>Heures restantes:</span>
-                      <span className="font-medium">{userInfo?.heures_restantes}</span>
-                    </div>
                     <div className="flex justify-between">
                       <span>Heures effectuées:</span>
                       <span className="font-medium">{heuresStats?.heures_passees}</span>
@@ -237,123 +256,108 @@ const MonCompte = () => {
                       <span>Heures à venir:</span>
                       <span className="font-medium">{heuresStats?.heures_a_venir}</span>
                     </div>
+                    <div className="flex justify-between">
+                      <span>Heures en attente:</span>
+                      <span className="font-medium">{heuresStats?.heures_en_attente}</span>
+                    </div>
                   </dd>
                 </div>
-              </>
-            )}
-            {userRole === 'moniteur' && (
-              <div className="sm:col-span-2">
-                <dt className="text-sm font-medium text-gray-500">Statistiques des heures</dt>
-                <dd className="mt-1 text-sm space-y-1">
-                  <div className="flex justify-between">
-                    <span>Heures effectuées:</span>
-                    <span className="font-medium">{heuresStats?.heures_passees}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Heures à venir:</span>
-                    <span className="font-medium">{heuresStats?.heures_a_venir}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Heures en attente:</span>
-                    <span className="font-medium">{heuresStats?.heures_en_attente}</span>
-                  </div>
-                </dd>
-              </div>
-            )}
-          </dl>
-        </div>
-      </div>
-
-      <div className="mt-6 flex justify-end">
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700"
-        >
-          Modifier le mot de passe
-        </button>
-      </div>
-
-      <Dialog
-        open={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        className="fixed z-10 inset-0 overflow-y-auto"
-      >
-        <div className="flex items-center justify-center min-h-screen">
-          <Dialog.Overlay className="fixed inset-0 bg-black opacity-30" />
-
-          <div className="relative bg-white rounded-lg p-8 max-w-md w-full mx-4">
-            <Dialog.Title className="text-lg font-medium text-gray-900 mb-4">
-              Modifier le mot de passe
-            </Dialog.Title>
-
-            <form onSubmit={handlePasswordUpdate} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Mot de passe actuel
-                </label>
-                <input
-                  type="password"
-                  required
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Nouveau mot de passe
-                </label>
-                <input
-                  type="password"
-                  required
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Confirmer le nouveau mot de passe
-                </label>
-                <input
-                  type="password"
-                  required
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                />
-              </div>
-
-              <div className="flex justify-end space-x-2 mt-6">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300"
-                >
-                  Annuler
-                </button>
-                <button
-                  type="submit"
-                  className="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700"
-                >
-                  Modifier
-                </button>
-              </div>
-            </form>
-
-            <button
-              onClick={() => setIsModalOpen(false)}
-              className="absolute top-2 right-2 text-gray-400 hover:text-gray-500"
-            >
-              <span className="sr-only">Fermer</span>
-              ×
-            </button>
+              )}
+            </dl>
           </div>
         </div>
-      </Dialog>
-    </div>
+
+        <div className="mt-6 flex justify-end">
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700"
+          >
+            Modifier le mot de passe
+          </button>
+        </div>
+
+        <Dialog
+          open={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          className="fixed z-10 inset-0 overflow-y-auto"
+        >
+          <div className="flex items-center justify-center min-h-screen">
+            <Dialog.Overlay className="fixed inset-0 bg-black opacity-30" />
+
+            <div className="relative bg-white rounded-lg p-8 max-w-md w-full mx-4">
+              <Dialog.Title className="text-lg font-medium text-gray-900 mb-4">
+                Modifier le mot de passe
+              </Dialog.Title>
+
+              <form onSubmit={handlePasswordUpdate} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Mot de passe actuel
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Nouveau mot de passe
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Confirmer le nouveau mot de passe
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                  />
+                </div>
+
+                <div className="flex justify-end space-x-2 mt-6">
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="submit"
+                    className="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700"
+                  >
+                    Modifier
+                  </button>
+                </div>
+              </form>
+
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="absolute top-2 right-2 text-gray-400 hover:text-gray-500"
+              >
+                <span className="sr-only">Fermer</span>
+                ×
+              </button>
+            </div>
+          </div>
+        </Dialog>
+      </div>
+    </>
   );
 };
 
