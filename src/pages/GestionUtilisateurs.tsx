@@ -28,6 +28,9 @@ const GestionUtilisateurs = () => {
   // ...existing code...
   const { user } = useAuth(); // Récupère l'utilisateur connecté
 
+  const [searchTerm, setSearchTerm] = useState('');
+  const [roleFilter, setRoleFilter] = useState<'tous' | 'eleve' | 'moniteur' | 'admin'>('tous');
+
   // Récupère l'auto_ecole_id de l'admin connecté (à adapter selon ton modèle)
   const [autoEcoleId, setAutoEcoleId] = useState<string | null>(null);
 
