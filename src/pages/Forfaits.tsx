@@ -22,22 +22,25 @@ interface ForfaitFormData {
 }
 
 const Forfaits = () => {
-  const { user, userRole } = useAuth();
+  const { user, userRole, autoEcoleId } = useAuth();
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingForfait, setEditingForfait] = useState<ForfaitFormData | null>(null);
   const { checkout, isLoading } = useStripe();
 
   const { data: forfaits, isLoading: isLoadingForfaits } = useQuery({
-    queryKey: ['forfaits'],
+    queryKey: ['forfaits', autoEcoleId],
     queryFn: async () => {
+      if (!autoEcoleId) return [];
       const { data, error } = await supabase
         .from('forfaits')
         .select('*')
+        .eq('auto_ecole_id', autoEcoleId) // Filtre par auto_ecole_id
         .order('prix');
       if (error) throw error;
       return data as Forfait[];
     },
+    enabled: !!autoEcoleId, // N'exécute la requête que si autoEcoleId est défini
   });
 
   const handleCheckout = async (forfaitId: number) => {
@@ -65,11 +68,12 @@ const Forfaits = () => {
           nom: forfait.nom,
           description: forfait.description,
           prix: parseFloat(forfait.prix),
+          auto_ecole_id: autoEcoleId,
         });
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['forfaits'] });
+      queryClient.invalidateQueries({ queryKey: ['forfaits', autoEcoleId] });
       toast.success('Forfait créé avec succès');
       setIsModalOpen(false);
       setEditingForfait(null);
@@ -87,12 +91,13 @@ const Forfaits = () => {
           nom: forfait.nom,
           description: forfait.description,
           prix: parseFloat(forfait.prix),
+          auto_ecole_id: autoEcoleId,
         })
         .eq('id', forfait.id);
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['forfaits'] });
+      queryClient.invalidateQueries({ queryKey: ['forfaits', autoEcoleId] });
       toast.success('Forfait modifié avec succès');
       setIsModalOpen(false);
       setEditingForfait(null);
@@ -111,7 +116,7 @@ const Forfaits = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['forfaits'] });
+      queryClient.invalidateQueries({ queryKey: ['forfaits', autoEcoleId] });
       toast.success('Forfait supprimé avec succès');
     },
     onError: () => {
