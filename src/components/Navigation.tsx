@@ -9,7 +9,7 @@ function classNames(...classes: string[]) {
 }
 
 export default function Navigation() {
-  const { user, userRole } = useAuth();
+  const { user, userRole, signOut } = useAuth();
   const location = useLocation();
   const { autoEcoleId } = useParams();
 
