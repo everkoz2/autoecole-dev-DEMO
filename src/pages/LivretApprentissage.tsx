@@ -2,6 +2,7 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../supabase/client';
 import { useAuth } from '../contexts/AuthContext';
+import Navigation from '../components/Navigation';
 
 interface Point {
   id: number;
@@ -68,9 +69,12 @@ const LivretApprentissage = ({ userId }: Props) => {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
+      <>
+        <Navigation />
+        <div className="flex justify-center items-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        </div>
+      </>
     );
   }
 
@@ -79,60 +83,63 @@ const LivretApprentissage = ({ userId }: Props) => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {!userId && <h1 className="text-3xl font-bold text-gray-900 mb-8">Livret d'apprentissage</h1>}
+    <>
+      <Navigation />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {!userId && <h1 className="text-3xl font-bold text-gray-900 mb-8">Livret d'apprentissage</h1>}
 
-      <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-        <div className="px-4 py-5 sm:px-6">
-          <h2 className="text-lg leading-6 font-medium text-gray-900">
-            Points d'évaluation
-          </h2>
-          <p className="mt-1 max-w-2xl text-sm text-gray-500">
-            Suivi de votre progression
-          </p>
-        </div>
-        <div className="border-t border-gray-200">
-          <ul className="divide-y divide-gray-200">
-            {points?.map((point) => {
-              const appreciation = getAppreciationForPoint(point.id);
-              return (
-                <li key={point.id} className="px-4 py-4 sm:px-6">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex-1">
-                      <h3 className="text-sm font-medium text-gray-900">
-                        {point.description}
-                      </h3>
-                      {appreciation ? (
-                        <div className="mt-2">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${appreciationColors[appreciation.appreciation]}`}>
-                            {appreciation.appreciation}
-                          </span>
-                          <p className="mt-1 text-sm text-gray-500">
-                            Par {appreciation.moniteur.prenom} {appreciation.moniteur.nom} - 
-                            {new Date(appreciation.created_at).toLocaleDateString('fr-FR')}
-                          </p>
-                          {appreciation.commentaire && (
-                            <p className="mt-1 text-sm text-gray-600">
-                              {appreciation.commentaire}
+        <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+          <div className="px-4 py-5 sm:px-6">
+            <h2 className="text-lg leading-6 font-medium text-gray-900">
+              Points d'évaluation
+            </h2>
+            <p className="mt-1 max-w-2xl text-sm text-gray-500">
+              Suivi de votre progression
+            </p>
+          </div>
+          <div className="border-t border-gray-200">
+            <ul className="divide-y divide-gray-200">
+              {points?.map((point) => {
+                const appreciation = getAppreciationForPoint(point.id);
+                return (
+                  <li key={point.id} className="px-4 py-4 sm:px-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex-1">
+                        <h3 className="text-sm font-medium text-gray-900">
+                          {point.description}
+                        </h3>
+                        {appreciation ? (
+                          <div className="mt-2">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${appreciationColors[appreciation.appreciation]}`}>
+                              {appreciation.appreciation}
+                            </span>
+                            <p className="mt-1 text-sm text-gray-500">
+                              Par {appreciation.moniteur.prenom} {appreciation.moniteur.nom} - 
+                              {new Date(appreciation.created_at).toLocaleDateString('fr-FR')}
                             </p>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="mt-2">
-                          <span className="text-sm text-gray-500 italic">
-                            En attente d'évaluation
-                          </span>
-                        </div>
-                      )}
+                            {appreciation.commentaire && (
+                              <p className="mt-1 text-sm text-gray-600">
+                                {appreciation.commentaire}
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="mt-2">
+                            <span className="text-sm text-gray-500 italic">
+                              En attente d'évaluation
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
