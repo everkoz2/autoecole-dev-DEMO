@@ -6,6 +6,7 @@ import { Dialog } from '@headlessui/react';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import Navigation from '../components/Navigation';
 
 interface Heure {
   id: string;
@@ -197,9 +198,12 @@ const MesHeures = () => {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
+      <>
+        <Navigation />
+        <div className="flex justify-center items-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        </div>
+      </>
     );
   }
 
@@ -218,212 +222,215 @@ const MesHeures = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">Mes heures</h1>
+    <>
+      <Navigation />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">Mes heures</h1>
 
-      <div className="border-b border-gray-200 mb-6">
-        <nav className="-mb-px flex space-x-8">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`
-                whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm
-                ${activeTab === tab.id
-                  ? 'border-primary-500 text-primary-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }
-              `}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </nav>
-      </div>
+        <div className="border-b border-gray-200 mb-6">
+          <nav className="-mb-px flex space-x-8">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`
+                  whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm
+                  ${activeTab === tab.id
+                    ? 'border-primary-500 text-primary-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }
+                `}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </nav>
+        </div>
 
-      <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-        <ul className="divide-y divide-gray-200">
-          {heures?.map((heure) => (
-            <li key={heure.id} className="px-4 py-4 sm:px-6">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">
-                    {formatDate(heure.date)} - {formatTime(heure.heure_debut)} à {formatTime(heure.heure_fin)}
-                  </p>
-                  <p className="mt-2 text-sm text-gray-500">
-                    {userRole === 'eleve' ? (
-                      <>Moniteur : {heure.moniteur.prenom} {heure.moniteur.nom}</>
-                    ) : (
-                      <>Élève : {heure.eleve ? `${heure.eleve.prenom} ${heure.eleve.nom}` : 'Non réservé'}</>
+        <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+          <ul className="divide-y divide-gray-200">
+            {heures?.map((heure) => (
+              <li key={heure.id} className="px-4 py-4 sm:px-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-900">
+                      {formatDate(heure.date)} - {formatTime(heure.heure_debut)} à {formatTime(heure.heure_fin)}
+                    </p>
+                    <p className="mt-2 text-sm text-gray-500">
+                      {userRole === 'eleve' ? (
+                        <>Moniteur : {heure.moniteur.prenom} {heure.moniteur.nom}</>
+                      ) : (
+                        <>Élève : {heure.eleve ? `${heure.eleve.prenom} ${heure.eleve.nom}` : 'Non réservé'}</>
+                      )}
+                    </p>
+                    <p className="mt-2 text-sm text-gray-500">
+                      Véhicule : {heure.modele_vehicule} ({heure.boite_vitesse})
+                    </p>
+                    {heure.commentaires_moniteur && (
+                      <div className="mt-2 bg-gray-50 p-3 rounded-md">
+                        <p className="text-sm text-gray-700">
+                          <span className="font-medium">Commentaire du moniteur :</span>{' '}
+                          {heure.commentaires_moniteur}
+                        </p>
+                      </div>
                     )}
-                  </p>
-                  <p className="mt-2 text-sm text-gray-500">
-                    Véhicule : {heure.modele_vehicule} ({heure.boite_vitesse})
-                  </p>
-                  {heure.commentaires_moniteur && (
-                    <div className="mt-2 bg-gray-50 p-3 rounded-md">
-                      <p className="text-sm text-gray-700">
-                        <span className="font-medium">Commentaire du moniteur :</span>{' '}
-                        {heure.commentaires_moniteur}
-                      </p>
-                    </div>
-                  )}
+                  </div>
+                  <div className="ml-4 flex flex-col space-y-2">
+                    {((userRole === 'moniteur' && (activeTab === 'a_venir' || activeTab === 'en_attente')) ||
+                      (userRole === 'eleve' && activeTab === 'a_venir')) && (
+                      <button
+                        onClick={() => {
+                          setSelectedHeure(heure);
+                          setIsConfirmModalOpen(true);
+                        }}
+                        className="bg-red-100 text-red-700 hover:bg-red-200 px-4 py-2 rounded-md text-sm font-medium"
+                      >
+                        Annuler
+                      </button>
+                    )}
+                    {userRole === 'moniteur' && activeTab === 'effectuees' && !heure.commentaires_moniteur && (
+                      <button
+                        onClick={() => {
+                          setSelectedHeure(heure);
+                          setIsModalOpen(true);
+                        }}
+                        className="bg-primary-100 text-primary-700 hover:bg-primary-200 px-4 py-2 rounded-md text-sm font-medium"
+                      >
+                        Ajouter un commentaire
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <div className="ml-4 flex flex-col space-y-2">
-                  {((userRole === 'moniteur' && (activeTab === 'a_venir' || activeTab === 'en_attente')) ||
-                    (userRole === 'eleve' && activeTab === 'a_venir')) && (
-                    <button
-                      onClick={() => {
-                        setSelectedHeure(heure);
-                        setIsConfirmModalOpen(true);
-                      }}
-                      className="bg-red-100 text-red-700 hover:bg-red-200 px-4 py-2 rounded-md text-sm font-medium"
-                    >
-                      Annuler
-                    </button>
-                  )}
-                  {userRole === 'moniteur' && activeTab === 'effectuees' && !heure.commentaires_moniteur && (
-                    <button
-                      onClick={() => {
-                        setSelectedHeure(heure);
-                        setIsModalOpen(true);
-                      }}
-                      className="bg-primary-100 text-primary-700 hover:bg-primary-200 px-4 py-2 rounded-md text-sm font-medium"
-                    >
-                      Ajouter un commentaire
-                    </button>
-                  )}
-                </div>
+              </li>
+            ))}
+            {heures?.length === 0 && (
+              <li className="px-4 py-8 sm:px-6 text-center text-gray-500">
+                Aucune heure {activeTab === 'effectuees' ? 'effectuée' : activeTab === 'a_venir' ? 'à venir' : 'en attente'}
+              </li>
+            )}
+          </ul>
+        </div>
+
+        {/* Modal de confirmation d'annulation */}
+        <Dialog
+          open={isConfirmModalOpen}
+          onClose={() => setIsConfirmModalOpen(false)}
+          className="fixed z-10 inset-0 overflow-y-auto"
+        >
+          <div className="flex items-center justify-center min-h-screen">
+            <Dialog.Overlay className="fixed inset-0 bg-black opacity-30" />
+
+            <div className="relative bg-white rounded-lg p-8 max-w-md w-full mx-4">
+              <Dialog.Title className="text-lg font-medium text-gray-900 mb-4">
+                Confirmer l'annulation
+              </Dialog.Title>
+
+              <p className="text-sm text-gray-500 mb-6">
+                Êtes-vous sûr de vouloir annuler cette heure de conduite ?
+                {selectedHeure && (
+                  <span className="block mt-2 font-medium">
+                    {formatDate(selectedHeure.date)} - {formatTime(selectedHeure.heure_debut)} à {formatTime(selectedHeure.heure_fin)}
+                  </span>
+                )}
+              </p>
+
+              <div className="flex justify-end space-x-2">
+                <button
+                  onClick={() => {
+                    setIsConfirmModalOpen(false);
+                    setSelectedHeure(null);
+                  }}
+                  className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300"
+                >
+                  Non, annuler
+                </button>
+                <button
+                  onClick={handleAnnulation}
+                  className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
+                >
+                  Oui, confirmer
+                </button>
               </div>
-            </li>
-          ))}
-          {heures?.length === 0 && (
-            <li className="px-4 py-8 sm:px-6 text-center text-gray-500">
-              Aucune heure {activeTab === 'effectuees' ? 'effectuée' : activeTab === 'a_venir' ? 'à venir' : 'en attente'}
-            </li>
-          )}
-        </ul>
-      </div>
 
-      {/* Modal de confirmation d'annulation */}
-      <Dialog
-        open={isConfirmModalOpen}
-        onClose={() => setIsConfirmModalOpen(false)}
-        className="fixed z-10 inset-0 overflow-y-auto"
-      >
-        <div className="flex items-center justify-center min-h-screen">
-          <Dialog.Overlay className="fixed inset-0 bg-black opacity-30" />
-
-          <div className="relative bg-white rounded-lg p-8 max-w-md w-full mx-4">
-            <Dialog.Title className="text-lg font-medium text-gray-900 mb-4">
-              Confirmer l'annulation
-            </Dialog.Title>
-
-            <p className="text-sm text-gray-500 mb-6">
-              Êtes-vous sûr de vouloir annuler cette heure de conduite ?
-              {selectedHeure && (
-                <span className="block mt-2 font-medium">
-                  {formatDate(selectedHeure.date)} - {formatTime(selectedHeure.heure_debut)} à {formatTime(selectedHeure.heure_fin)}
-                </span>
-              )}
-            </p>
-
-            <div className="flex justify-end space-x-2">
               <button
                 onClick={() => {
                   setIsConfirmModalOpen(false);
                   setSelectedHeure(null);
                 }}
-                className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300"
+                className="absolute top-2 right-2 text-gray-400 hover:text-gray-500"
               >
-                Non, annuler
-              </button>
-              <button
-                onClick={handleAnnulation}
-                className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
-              >
-                Oui, confirmer
+                <span className="sr-only">Fermer</span>
+                ×
               </button>
             </div>
-
-            <button
-              onClick={() => {
-                setIsConfirmModalOpen(false);
-                setSelectedHeure(null);
-              }}
-              className="absolute top-2 right-2 text-gray-400 hover:text-gray-500"
-            >
-              <span className="sr-only">Fermer</span>
-              ×
-            </button>
           </div>
-        </div>
-      </Dialog>
+        </Dialog>
 
-      {/* Modal d'ajout de commentaire */}
-      <Dialog
-        open={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        className="fixed z-10 inset-0 overflow-y-auto"
-      >
-        <div className="flex items-center justify-center min-h-screen">
-          <Dialog.Overlay className="fixed inset-0 bg-black opacity-30" />
+        {/* Modal d'ajout de commentaire */}
+        <Dialog
+          open={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          className="fixed z-10 inset-0 overflow-y-auto"
+        >
+          <div className="flex items-center justify-center min-h-screen">
+            <Dialog.Overlay className="fixed inset-0 bg-black opacity-30" />
 
-          <div className="relative bg-white rounded-lg p-8 max-w-md w-full mx-4">
-            <Dialog.Title className="text-lg font-medium text-gray-900 mb-4">
-              Ajouter un commentaire
-            </Dialog.Title>
+            <div className="relative bg-white rounded-lg p-8 max-w-md w-full mx-4">
+              <Dialog.Title className="text-lg font-medium text-gray-900 mb-4">
+                Ajouter un commentaire
+              </Dialog.Title>
 
-            <div className="mb-4">
-              <p className="text-sm text-gray-500">
-                {selectedHeure && `${formatDate(selectedHeure.date)} - ${formatTime(selectedHeure.heure_debut)} à ${formatTime(selectedHeure.heure_fin)}`}
-              </p>
-              <p className="text-sm text-gray-500">
-                {selectedHeure?.eleve && `Élève : ${selectedHeure.eleve.prenom} ${selectedHeure.eleve.nom}`}
-              </p>
-            </div>
+              <div className="mb-4">
+                <p className="text-sm text-gray-500">
+                  {selectedHeure && `${formatDate(selectedHeure.date)} - ${formatTime(selectedHeure.heure_debut)} à ${formatTime(selectedHeure.heure_fin)}`}
+                </p>
+                <p className="text-sm text-gray-500">
+                  {selectedHeure?.eleve && `Élève : ${selectedHeure.eleve.prenom} ${selectedHeure.eleve.nom}`}
+                </p>
+              </div>
 
-            <textarea
-              className="w-full h-32 p-2 border rounded-md"
-              placeholder="Votre commentaire..."
-              value={commentaire}
-              onChange={(e) => setCommentaire(e.target.value)}
-            />
+              <textarea
+                className="w-full h-32 p-2 border rounded-md"
+                placeholder="Votre commentaire..."
+                value={commentaire}
+                onChange={(e) => setCommentaire(e.target.value)}
+              />
 
-            <div className="mt-6 flex justify-end space-x-2">
+              <div className="mt-6 flex justify-end space-x-2">
+                <button
+                  onClick={() => {
+                    setIsModalOpen(false);
+                    setSelectedHeure(null);
+                    setCommentaire('');
+                  }}
+                  className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={handleAjoutCommentaire}
+                  className="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700"
+                >
+                  Enregistrer
+                </button>
+              </div>
+
               <button
                 onClick={() => {
                   setIsModalOpen(false);
                   setSelectedHeure(null);
                   setCommentaire('');
                 }}
-                className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300"
+                className="absolute top-2 right-2 text-gray-400 hover:text-gray-500"
               >
-                Annuler
-              </button>
-              <button
-                onClick={handleAjoutCommentaire}
-                className="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700"
-              >
-                Enregistrer
+                <span className="sr-only">Fermer</span>
+                ×
               </button>
             </div>
-
-            <button
-              onClick={() => {
-                setIsModalOpen(false);
-                setSelectedHeure(null);
-                setCommentaire('');
-              }}
-              className="absolute top-2 right-2 text-gray-400 hover:text-gray-500"
-            >
-              <span className="sr-only">Fermer</span>
-              ×
-            </button>
           </div>
-        </div>
-      </Dialog>
-    </div>
+        </Dialog>
+      </div>
+    </>
   );
 };
 
