@@ -8,7 +8,7 @@ interface AuthContextType {
   userRole: string;
   autoEcoleId: string | null;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, firstName: string, lastName: string, phone: string, nomAutoecole: string) => Promise<void>;
+  signUp: (email: string, password: string, firstName: string, lastName: string, phone: string, nomAutoecole?: string) => Promise<void>;
   signOut: () => Promise<void>;
   isAuthLoading: boolean;
 }
@@ -37,13 +37,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return '';
       }
 
-      // Mettre à jour l'ID de l'auto-école
-      setAutoEcoleId(data?.auto_ecole_id || null);
-
-      // Vérifier si l'utilisateur appartient à l'auto-école actuelle
-      if (urlAutoEcoleId && data?.auto_ecole_id !== urlAutoEcoleId) {
-        return '';
-      }
+      setAutoEcoleId(data?.auto_ecole_id || urlAutoEcoleId || null);
 
       return data?.role || '';
     } catch (error) {
@@ -134,8 +128,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(data.user);
         setUserRole(role);
         
-        // Rediriger vers la page de l'auto-école si disponible
-        if (autoEcoleId) {
+        if (urlAutoEcoleId) {
+          // Update user's auto_ecole_id if they don't have one
+          const { error: updateError } = await supabase
+            .from('utilisateurs')
+            .update({ auto_ecole_id: urlAutoEcoleId })
+            .eq('id', data.user.id)
+            .is('auto_ecole_id', null);
+
+          if (updateError) throw updateError;
+          
+          navigate(`/${urlAutoEcoleId}`);
+        } else if (autoEcoleId) {
           navigate(`/${autoEcoleId}`);
         } else {
           navigate('/');
@@ -156,7 +160,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     firstName: string,
     lastName: string,
     phone: string,
-    nomAutoecole: string
+    nomAutoecole?: string
   ) => {
     try {
       setIsAuthLoading(true);
@@ -169,18 +173,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (signUpError) throw signUpError;
       if (!newUser) throw new Error("Erreur lors de la création du compte");
 
-      const { data: autoEcole, error: autoEcoleError } = await supabase
-        .from('auto_ecoles')
-        .insert({
-          nom: nomAutoecole,
-          admin_id: newUser.id
-        })
-        .select()
-        .single();
+      let autoEcoleIdToUse = urlAutoEcoleId;
 
-      if (autoEcoleError) {
-        await supabase.auth.admin.deleteUser(newUser.id);
-        throw autoEcoleError;
+      // Si on crée une nouvelle auto-école
+      if (nomAutoecole) {
+        const { data: autoEcole, error: autoEcoleError } = await supabase
+          .from('auto_ecoles')
+          .insert({
+            nom: nomAutoecole,
+            admin_id: newUser.id
+          })
+          .select()
+          .single();
+
+        if (autoEcoleError) {
+          await supabase.auth.admin.deleteUser(newUser.id);
+          throw autoEcoleError;
+        }
+
+        autoEcoleIdToUse = autoEcole.id;
       }
 
       const { error: userError } = await supabase
@@ -191,20 +202,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           prenom: firstName,
           nom: lastName,
           telephone: phone,
-          role: 'admin',
-          auto_ecole_id: autoEcole.id
+          role: nomAutoecole ? 'admin' : 'eleve',
+          auto_ecole_id: autoEcoleIdToUse
         });
 
       if (userError) {
-        await supabase.from('auto_ecoles').delete().eq('id', autoEcole.id);
+        if (nomAutoecole) {
+          await supabase.from('auto_ecoles').delete().eq('id', autoEcoleIdToUse);
+        }
         await supabase.auth.admin.deleteUser(newUser.id);
         throw userError;
       }
 
       setUser(newUser);
-      setUserRole('admin');
-      setAutoEcoleId(autoEcole.id);
-      navigate('/success');
+      setUserRole(nomAutoecole ? 'admin' : 'eleve');
+      setAutoEcoleId(autoEcoleIdToUse);
+
+      if (nomAutoecole) {
+        navigate('/success');
+      } else if (autoEcoleIdToUse) {
+        navigate(`/${autoEcoleIdToUse}`);
+      } else {
+        navigate('/');
+      }
 
     } catch (error: any) {
       console.error('Error in signUp:', error);

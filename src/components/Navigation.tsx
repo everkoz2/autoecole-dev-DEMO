@@ -1,5 +1,5 @@
 import React, { Fragment } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { Disclosure, Menu, Transition } from '@headlessui/react';
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../contexts/AuthContext';
@@ -9,22 +9,25 @@ function classNames(...classes: string[]) {
 }
 
 export default function Navigation() {
-  const { user, userRole, signOut, autoEcoleId } = useAuth();
+  const { user, userRole, signOut } = useAuth();
   const location = useLocation();
+  const { autoEcoleId } = useParams();
 
   const navigation = [
     { name: 'Accueil', href: autoEcoleId ? `/${autoEcoleId}` : '/', roles: [] },
-    { name: 'Forfaits', href: autoEcoleId ? `/${autoEcoleId}/forfaits` : '/forfaits', roles: [] },
     ...((!autoEcoleId && !user) ? [{ name: 'Créer une auto-école', href: '/creer-auto-ecole', roles: [] }] : []),
-    { name: 'Calendrier', href: `/${autoEcoleId}/calendrier`, roles: ['eleve', 'moniteur', 'admin'] },
-    { name: 'Mes heures', href: `/${autoEcoleId}/mes-heures`, roles: ['eleve', 'moniteur'] },
-    { name: 'Mes documents', href: `/${autoEcoleId}/mes-documents`, roles: ['eleve'] },
-    { name: "Livret d'apprentissage", href: `/${autoEcoleId}/livret-apprentissage`, roles: ['eleve'] },
-    { name: 'Mes factures', href: `/${autoEcoleId}/mes-factures`, roles: ['eleve'] },
-    { name: 'Élèves', href: `/${autoEcoleId}/eleves`, roles: ['moniteur'] },
-    { name: 'Gestion utilisateurs', href: `/${autoEcoleId}/gestion-utilisateurs`, roles: ['admin'] },
-    { name: 'Logs', href: `/${autoEcoleId}/logs`, roles: ['admin'] },
-  ].filter(item => autoEcoleId || !item.href.includes('undefined'));
+    ...(autoEcoleId ? [
+      { name: 'Forfaits', href: `/${autoEcoleId}/forfaits`, roles: [] },
+      { name: 'Calendrier', href: `/${autoEcoleId}/calendrier`, roles: ['eleve', 'moniteur', 'admin'] },
+      { name: 'Mes heures', href: `/${autoEcoleId}/mes-heures`, roles: ['eleve', 'moniteur'] },
+      { name: 'Mes documents', href: `/${autoEcoleId}/mes-documents`, roles: ['eleve'] },
+      { name: "Livret d'apprentissage", href: `/${autoEcoleId}/livret-apprentissage`, roles: ['eleve'] },
+      { name: 'Mes factures', href: `/${autoEcoleId}/mes-factures`, roles: ['eleve'] },
+      { name: 'Élèves', href: `/${autoEcoleId}/eleves`, roles: ['moniteur'] },
+      { name: 'Gestion utilisateurs', href: `/${autoEcoleId}/gestion-utilisateurs`, roles: ['admin'] },
+      { name: 'Logs', href: `/${autoEcoleId}/logs`, roles: ['admin'] },
+    ] : [])
+  ];
 
   const filteredNavigation = navigation.filter(item => 
     item.roles.length === 0 || (userRole && item.roles.includes(userRole))
@@ -83,7 +86,7 @@ export default function Navigation() {
                         <Menu.Item>
                           {({ active }) => (
                             <Link
-                              to={`/${autoEcoleId}/mon-compte`}
+                              to={autoEcoleId ? `/${autoEcoleId}/mon-compte` : '/mon-compte'}
                               className={classNames(
                                 active ? 'bg-gray-100' : '',
                                 'block px-4 py-2 text-sm text-gray-700'
@@ -154,7 +157,7 @@ export default function Navigation() {
                 <div className="space-y-1">
                   <Disclosure.Button
                     as={Link}
-                    to={`/${autoEcoleId}/mon-compte`}
+                    to={autoEcoleId ? `/${autoEcoleId}/mon-compte` : '/mon-compte'}
                     className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-primary-700 hover:text-white"
                   >
                     Mon compte
