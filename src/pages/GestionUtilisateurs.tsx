@@ -31,7 +31,7 @@ const GestionUtilisateurs = () => {
   const { autoEcoleSlug: urlAutoEcoleSlug } = useParams();
   const navigate = useNavigate();
 
-  // Ajout : gestion du slug -> id
+  // Gestion du slug -> id pour sécuriser l'accès aux utilisateurs de la bonne auto-école
   const [autoEcoleId, setAutoEcoleId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -67,7 +67,7 @@ const GestionUtilisateurs = () => {
 
   const queryClient = useQueryClient();
 
-  // Utilise toujours l'auto_ecole_id récupéré via le slug pour filtrer
+  // Récupère uniquement les utilisateurs de la bonne auto-école
   const { data: users, isLoading: isLoadingUsers } = useQuery({
     queryKey: ['users', autoEcoleId],
     queryFn: async () => {
@@ -83,18 +83,16 @@ const GestionUtilisateurs = () => {
     enabled: !!autoEcoleId,
   });
 
+  // Récupère tous les forfaits (forfaits uniques pour toutes les auto-écoles)
   const { data: forfaits } = useQuery({
-    queryKey: ['forfaits', autoEcoleId],
+    queryKey: ['forfaits'],
     queryFn: async () => {
-      if (!autoEcoleId) return [];
       const { data, error } = await supabase
         .from('forfaits')
-        .select('id, nom')
-        .eq('auto_ecole_id', autoEcoleId);
+        .select('id, nom');
       if (error) throw error;
       return data as Forfait[];
     },
-    enabled: !!autoEcoleId,
   });
 
   const updateUser = useMutation({
