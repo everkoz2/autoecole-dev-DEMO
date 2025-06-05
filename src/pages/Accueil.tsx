@@ -7,25 +7,25 @@ import Navigation from '../components/Navigation'; // <-- AJOUTE CETTE LIGNE
 
 const Accueil = () => {
   const { user } = useAuth();
-  const { autoEcoleId } = useParams();
+  const { autoEcoleSlug } = useParams();
 
   const { data: autoEcole } = useQuery({
-    queryKey: ['auto-ecole', autoEcoleId],
+    queryKey: ['auto-ecole', autoEcoleSlug],
     queryFn: async () => {
-      if (!autoEcoleId) return null;
+      if (!autoEcoleSlug) return null;
       const { data, error } = await supabase
         .from('auto_ecoles')
         .select('*')
-        .eq('id', autoEcoleId)
+        .eq('slug', autoEcoleSlug)
         .single();
 
       if (error) throw error;
       return data;
     },
-    enabled: !!autoEcoleId
+    enabled: !!autoEcoleSlug
   });
 
-  if (!autoEcoleId) {
+  if (!autoEcoleSlug) {
     return (
       <>
         <Navigation /> {/* AJOUTE ICI */}
