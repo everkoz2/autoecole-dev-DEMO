@@ -9,35 +9,38 @@ function classNames(...classes: string[]) {
 }
 
 export default function Navigation() {
-  const { user, userRole, signOut } = useAuth();
+  const { user, userRole, signOut, autoEcoleSlug } = useAuth();
   const location = useLocation();
-  const { autoEcoleId } = useParams();
+  const { autoEcoleSlug: urlAutoEcoleSlug } = useParams();
+
+  // On priorise le slug du contexte Auth, sinon celui de l'URL
+  const slug = autoEcoleSlug || urlAutoEcoleSlug || null;
 
   const navigation = [
-    // Home page navigation
-    ...(!autoEcoleId ? [
+    // Navigation générale (pas dans une auto-école)
+    ...(!slug ? [
       { name: 'Accueil', href: '/', roles: [] },
       { name: 'Créer une auto-école', href: '/creer-auto-ecole', roles: [] }
     ] : []),
 
-    // Auto-école specific navigation
-    ...(autoEcoleId ? [
-      { name: 'Accueil', href: `/${autoEcoleId}/accueil`, roles: [] },
-      { name: 'Forfaits', href: `/${autoEcoleId}/forfaits`, roles: [] },
+    // Navigation spécifique à une auto-école
+    ...(slug ? [
+      { name: 'Accueil', href: `/${slug}/accueil`, roles: [] },
+      { name: 'Forfaits', href: `/${slug}/forfaits`, roles: [] },
       ...(user ? [
-        { name: 'Calendrier', href: `/${autoEcoleId}/calendrier`, roles: ['eleve', 'moniteur', 'admin'] },
-        { name: 'Mes heures', href: `/${autoEcoleId}/mes-heures`, roles: ['eleve', 'moniteur'] },
-        { name: 'Mes documents', href: `/${autoEcoleId}/mes-documents`, roles: ['eleve'] },
-        { name: "Livret d'apprentissage", href: `/${autoEcoleId}/livret-apprentissage`, roles: ['eleve'] },
-        { name: 'Mes factures', href: `/${autoEcoleId}/mes-factures`, roles: ['eleve'] },
-        { name: 'Élèves', href: `/${autoEcoleId}/eleves`, roles: ['moniteur'] },
-        { name: 'Gestion utilisateurs', href: `/${autoEcoleId}/gestion-utilisateurs`, roles: ['admin'] },
-        { name: 'Logs', href: `/${autoEcoleId}/logs`, roles: ['admin'] },
+        { name: 'Calendrier', href: `/${slug}/calendrier`, roles: ['eleve', 'moniteur', 'admin'] },
+        { name: 'Mes heures', href: `/${slug}/mes-heures`, roles: ['eleve', 'moniteur'] },
+        { name: 'Mes documents', href: `/${slug}/mes-documents`, roles: ['eleve'] },
+        { name: "Livret d'apprentissage", href: `/${slug}/livret-apprentissage`, roles: ['eleve'] },
+        { name: 'Mes factures', href: `/${slug}/mes-factures`, roles: ['eleve'] },
+        { name: 'Élèves', href: `/${slug}/eleves`, roles: ['moniteur'] },
+        { name: 'Gestion utilisateurs', href: `/${slug}/gestion-utilisateurs`, roles: ['admin'] },
+        { name: 'Logs', href: `/${slug}/logs`, roles: ['admin'] },
       ] : [])
     ] : [])
   ];
 
-  const filteredNavigation = navigation.filter(item => 
+  const filteredNavigation = navigation.filter(item =>
     item.roles.length === 0 || (userRole && item.roles.includes(userRole))
   );
 
@@ -50,7 +53,7 @@ export default function Navigation() {
               <div className="flex">
                 <div className="flex flex-shrink-0 items-center">
                   <Link to="/" className="text-white text-xl font-bold">
-                    {autoEcoleId ? 'Auto École' : 'Démo Auto École'}
+                    {slug ? 'Auto École' : 'Démo Auto École'}
                   </Link>
                 </div>
                 <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
@@ -94,7 +97,7 @@ export default function Navigation() {
                         <Menu.Item>
                           {({ active }) => (
                             <Link
-                              to={autoEcoleId ? `/${autoEcoleId}/mon-compte` : '/mon-compte'}
+                              to={slug ? `/${slug}/mon-compte` : '/mon-compte'}
                               className={classNames(
                                 active ? 'bg-gray-100' : '',
                                 'block px-4 py-2 text-sm text-gray-700'
@@ -120,9 +123,9 @@ export default function Navigation() {
                       </Menu.Items>
                     </Transition>
                   </Menu>
-                ) : autoEcoleId ? (
+                ) : slug ? (
                   <Link
-                    to={`/${autoEcoleId}/auth`}
+                    to={`/${slug}/auth`}
                     className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
                   >
                     Se connecter / Créer un compte
@@ -165,7 +168,7 @@ export default function Navigation() {
                 <div className="space-y-1">
                   <Disclosure.Button
                     as={Link}
-                    to={autoEcoleId ? `/${autoEcoleId}/mon-compte` : '/mon-compte'}
+                    to={slug ? `/${slug}/mon-compte` : '/mon-compte'}
                     className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-primary-700 hover:text-white"
                   >
                     Mon compte
@@ -178,10 +181,10 @@ export default function Navigation() {
                     Se déconnecter
                   </Disclosure.Button>
                 </div>
-              ) : autoEcoleId ? (
+              ) : slug ? (
                 <Disclosure.Button
                   as={Link}
-                  to={`/${autoEcoleId}/auth`}
+                  to={`/${slug}/auth`}
                   className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:bg-primary-700 hover:text-white"
                 >
                   Se connecter / Créer un compte
