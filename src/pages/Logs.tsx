@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../supabase/client';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import Navigation from '../components/Navigation'; // AJOUT
+import Navigation from '../components/Navigation';
+import { useAuth } from '../contexts/AuthContext';
+import { useParams, useNavigate } from 'react-router-dom';
 
 interface Log {
   id: string;
@@ -13,31 +15,64 @@ interface Log {
   valeur_cible: string;
   message: string;
   created_at: string;
+  auto_ecole_id?: string;
   utilisateur: {
     prenom: string;
     nom: string;
     email: string;
+    auto_ecole_id?: string;
   };
 }
 
 const Logs = () => {
+  const { autoEcoleSlug: contextAutoEcoleSlug } = useAuth();
+  const { autoEcoleSlug: urlAutoEcoleSlug } = useParams();
+  const navigate = useNavigate();
+
+  const [autoEcoleId, setAutoEcoleId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [tableFilter, setTableFilter] = useState('toutes');
 
+  // Récupère l'id de l'auto-école à partir du slug
+  useEffect(() => {
+    const fetchAutoEcoleId = async () => {
+      const slug = contextAutoEcoleSlug || urlAutoEcoleSlug;
+      if (slug) {
+        const { data } = await supabase
+          .from('auto_ecoles')
+          .select('id')
+          .eq('slug', slug)
+          .single();
+        setAutoEcoleId(data?.id || null);
+      }
+    };
+    fetchAutoEcoleId();
+  }, [contextAutoEcoleSlug, urlAutoEcoleSlug]);
+
+  // Sécurité : redirige si l'utilisateur tente d'accéder à une auto-école qui n'est pas la sienne
+  useEffect(() => {
+    if (urlAutoEcoleSlug && contextAutoEcoleSlug && urlAutoEcoleSlug !== contextAutoEcoleSlug) {
+      navigate(`/${contextAutoEcoleSlug}/logs`, { replace: true });
+    }
+  }, [urlAutoEcoleSlug, contextAutoEcoleSlug, navigate]);
+
   const { data: logs, isLoading } = useQuery({
-    queryKey: ['logs'],
+    queryKey: ['logs', autoEcoleId],
     queryFn: async () => {
+      if (!autoEcoleId) return [];
       const { data, error } = await supabase
         .from('logs')
         .select(`
           *,
-          utilisateur:utilisateurs(prenom, nom, email)
+          utilisateur:utilisateurs(prenom, nom, email, auto_ecole_id)
         `)
+        .eq('auto_ecole_id', autoEcoleId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       return data as Log[];
     },
+    enabled: !!autoEcoleId,
   });
 
   // Obtenir la liste unique des tables
