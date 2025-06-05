@@ -3,6 +3,14 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { supabase } from '../supabase/client';
 import toast from 'react-hot-toast';
 
+function slugify(nom: string) {
+  return nom
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // enlève les accents
+    .replace(/[^a-z0-9]+/g, '-') // remplace tout sauf lettres/chiffres par -
+    .replace(/(^-|-$)+/g, ''); // enlève les - en début/fin
+}
+
 interface AuthContextType {
   user: any;
   userRole: string;
@@ -178,10 +186,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Si c'est une création d'auto-école (on reçoit un nom, pas un UUID)
       if (autoEcoleIdOrNom && !/^[0-9a-fA-F-]{36}$/.test(autoEcoleIdOrNom)) {
-        // 1. Créer l'auto-école et récupérer son id
+        const slug = slugify(autoEcoleIdOrNom);
         const { data: autoEcole, error: autoEcoleError } = await supabase
           .from('auto_ecoles')
-          .insert({ nom: autoEcoleIdOrNom })
+          .insert({ nom: autoEcoleIdOrNom, slug })
           .select()
           .single();
 
