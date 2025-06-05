@@ -27,17 +27,34 @@ interface Forfait {
 }
 
 const GestionUtilisateurs = () => {
-  const { user, autoEcoleId: contextAutoEcoleId } = useAuth();
-  const { autoEcoleId: urlAutoEcoleId } = useParams();
+  const { user, autoEcoleSlug: contextAutoEcoleSlug } = useAuth();
+  const { autoEcoleSlug: urlAutoEcoleSlug } = useParams();
   const navigate = useNavigate();
 
-  // Redirection si l'auto_ecole_id de l'URL ne correspond pas à celui du contexte utilisateur
+  // Ajout : gestion du slug -> id
+  const [autoEcoleId, setAutoEcoleId] = useState<string | null>(null);
+
   useEffect(() => {
-    if (urlAutoEcoleId && urlAutoEcoleId !== contextAutoEcoleId) {
-      navigate(`/${contextAutoEcoleId}/gestion-utilisateurs`, { replace: true });
+    const fetchAutoEcoleId = async () => {
+      const slug = contextAutoEcoleSlug || urlAutoEcoleSlug;
+      if (slug) {
+        const { data, error } = await supabase
+          .from('auto_ecoles')
+          .select('id')
+          .eq('slug', slug)
+          .single();
+        setAutoEcoleId(data?.id || null);
+      }
+    };
+    fetchAutoEcoleId();
+  }, [contextAutoEcoleSlug, urlAutoEcoleSlug]);
+
+  // Redirection si le slug de l'URL ne correspond pas à celui du contexte utilisateur
+  useEffect(() => {
+    if (urlAutoEcoleSlug && contextAutoEcoleSlug && urlAutoEcoleSlug !== contextAutoEcoleSlug) {
+      navigate(`/${contextAutoEcoleSlug}/gestion-utilisateurs`, { replace: true });
     }
-    // eslint-disable-next-line
-  }, [urlAutoEcoleId, contextAutoEcoleId]);
+  }, [urlAutoEcoleSlug, contextAutoEcoleSlug, navigate]);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<'tous' | 'eleve' | 'moniteur' | 'admin'>('tous');
@@ -50,34 +67,34 @@ const GestionUtilisateurs = () => {
 
   const queryClient = useQueryClient();
 
-  // Utilise toujours l'auto_ecole_id du contexte utilisateur pour filtrer
+  // Utilise toujours l'auto_ecole_id récupéré via le slug pour filtrer
   const { data: users, isLoading: isLoadingUsers } = useQuery({
-    queryKey: ['users', contextAutoEcoleId],
+    queryKey: ['users', autoEcoleId],
     queryFn: async () => {
-      if (!contextAutoEcoleId) return [];
+      if (!autoEcoleId) return [];
       const { data, error } = await supabase
         .from('utilisateurs')
         .select('*')
-        .eq('auto_ecole_id', contextAutoEcoleId)
+        .eq('auto_ecole_id', autoEcoleId)
         .order('nom');
       if (error) throw error;
       return data as User[];
     },
-    enabled: !!contextAutoEcoleId,
+    enabled: !!autoEcoleId,
   });
 
   const { data: forfaits } = useQuery({
-    queryKey: ['forfaits', contextAutoEcoleId],
+    queryKey: ['forfaits', autoEcoleId],
     queryFn: async () => {
-      if (!contextAutoEcoleId) return [];
+      if (!autoEcoleId) return [];
       const { data, error } = await supabase
         .from('forfaits')
         .select('id, nom')
-        .eq('auto_ecole_id', contextAutoEcoleId);
+        .eq('auto_ecole_id', autoEcoleId);
       if (error) throw error;
       return data as Forfait[];
     },
-    enabled: !!contextAutoEcoleId,
+    enabled: !!autoEcoleId,
   });
 
   const updateUser = useMutation({
@@ -93,11 +110,11 @@ const GestionUtilisateurs = () => {
           heures_restantes: user.heures_restantes,
         })
         .eq('id', user.id)
-        .eq('auto_ecole_id', contextAutoEcoleId); // Sécurise la requête
+        .eq('auto_ecole_id', autoEcoleId); // Sécurise la requête
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users', contextAutoEcoleId] });
+      queryClient.invalidateQueries({ queryKey: ['users', autoEcoleId] });
       toast.success('Utilisateur modifié avec succès');
       setIsEditModalOpen(false);
       setEditingUser(null);
