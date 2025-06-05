@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../supabase/client';
 import { useAuth } from '../contexts/AuthContext';
 import { Dialog } from '@headlessui/react';
 import toast from 'react-hot-toast';
 import Navigation from '../components/Navigation';
+import { useParams, useNavigate } from 'react-router-dom';
 
 interface Document {
   id: string;
@@ -26,8 +27,11 @@ const documentTypes = {
 };
 
 const MesDocuments = ({ userId, isAdmin }: MesDocumentsProps) => {
-  const { user, autoEcoleId } = useAuth();
+  const { user, autoEcoleSlug: contextAutoEcoleSlug } = useAuth();
+  const { autoEcoleSlug: urlAutoEcoleSlug } = useParams();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [autoEcoleId, setAutoEcoleId] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<Document | null>(null);
@@ -35,9 +39,33 @@ const MesDocuments = ({ userId, isAdmin }: MesDocumentsProps) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [nephNumber, setNephNumber] = useState('');
 
+  // Récupère l'id de l'auto-école à partir du slug
+  useEffect(() => {
+    const fetchAutoEcoleId = async () => {
+      const slug = contextAutoEcoleSlug || urlAutoEcoleSlug;
+      if (slug) {
+        const { data } = await supabase
+          .from('auto_ecoles')
+          .select('id')
+          .eq('slug', slug)
+          .single();
+        setAutoEcoleId(data?.id || null);
+      }
+    };
+    fetchAutoEcoleId();
+  }, [contextAutoEcoleSlug, urlAutoEcoleSlug]);
+
+  // Sécurité : redirige si l'utilisateur tente d'accéder à une auto-école qui n'est pas la sienne
+  useEffect(() => {
+    if (urlAutoEcoleSlug && contextAutoEcoleSlug && urlAutoEcoleSlug !== contextAutoEcoleSlug) {
+      navigate(`/${contextAutoEcoleSlug}/mes-documents`, { replace: true });
+    }
+  }, [urlAutoEcoleSlug, contextAutoEcoleSlug, navigate]);
+
   const { data: documents, isLoading } = useQuery({
-    queryKey: ['documents', userId ?? user?.id],
+    queryKey: ['documents', userId ?? user?.id, autoEcoleId],
     queryFn: async () => {
+      if (!autoEcoleId) return [];
       const { data, error } = await supabase
         .from('documents')
         .select('*')
@@ -48,6 +76,7 @@ const MesDocuments = ({ userId, isAdmin }: MesDocumentsProps) => {
       if (error) throw error;
       return data as Document[];
     },
+    enabled: !!(userId ?? user?.id) && !!autoEcoleId,
   });
 
   const handleDownload = async (url: string, filename: string) => {
@@ -104,7 +133,7 @@ const MesDocuments = ({ userId, isAdmin }: MesDocumentsProps) => {
       setIsModalOpen(false);
       setSelectedFile(null);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error(error.message);
     },
   });
@@ -133,7 +162,7 @@ const MesDocuments = ({ userId, isAdmin }: MesDocumentsProps) => {
       setIsModalOpen(false);
       setNephNumber('');
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error(error.message);
     },
   });
