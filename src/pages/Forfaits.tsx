@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../supabase/client';
 import { useAuth } from '../contexts/AuthContext';
@@ -15,27 +15,47 @@ interface Forfait {
 }
 
 const Forfaits = () => {
-  const { user, userRole, autoEcoleId: contextAutoEcoleId } = useAuth();
-  const { autoEcoleId: urlAutoEcoleId } = useParams();
+  const { user, userRole, autoEcoleSlug: contextAutoEcoleSlug } = useAuth();
+  const { autoEcoleSlug: urlAutoEcoleSlug } = useParams();
   const navigate = useNavigate();
+  const [autoEcoleId, setAutoEcoleId] = useState<string | null>(null);
+
+  // Récupère l'id de l'auto-école à partir du slug
+  useEffect(() => {
+    const fetchAutoEcoleId = async () => {
+      const slug = contextAutoEcoleSlug || urlAutoEcoleSlug;
+      if (slug) {
+        const { data, error } = await supabase
+          .from('auto_ecoles')
+          .select('id')
+          .eq('slug', slug)
+          .single();
+        setAutoEcoleId(data?.id || null);
+      }
+    };
+    fetchAutoEcoleId();
+  }, [contextAutoEcoleSlug, urlAutoEcoleSlug]);
 
   // Sécurité : redirige si l'utilisateur tente d'accéder à une auto-école qui n'est pas la sienne
   useEffect(() => {
-    if (urlAutoEcoleId && contextAutoEcoleId && urlAutoEcoleId !== contextAutoEcoleId) {
-      navigate(`/${contextAutoEcoleId}/forfaits`, { replace: true });
+    if (urlAutoEcoleSlug && contextAutoEcoleSlug && urlAutoEcoleSlug !== contextAutoEcoleSlug) {
+      navigate(`/${contextAutoEcoleSlug}/forfaits`, { replace: true });
     }
-  }, [urlAutoEcoleId, contextAutoEcoleId, navigate]);
+  }, [urlAutoEcoleSlug, contextAutoEcoleSlug, navigate]);
 
-  // Récupère tous les forfaits
+  // Récupère tous les forfaits de l'auto-école courante
   const { data: forfaits, isLoading } = useQuery({
-    queryKey: ['forfaits'],
+    queryKey: ['forfaits', autoEcoleId],
     queryFn: async () => {
+      if (!autoEcoleId) return [];
       const { data, error } = await supabase
         .from('forfaits')
-        .select('*');
+        .select('*')
+        .eq('auto_ecole_id', autoEcoleId);
       if (error) throw error;
       return data as Forfait[];
     },
+    enabled: !!autoEcoleId,
   });
 
   // Récupère les infos utilisateur (pour heures_restantes)
