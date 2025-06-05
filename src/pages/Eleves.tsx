@@ -31,8 +31,8 @@ interface Appreciation {
 }
 
 const Eleves = () => {
-  const { user, autoEcoleId: contextAutoEcoleId } = useAuth();
-  const { autoEcoleId: urlAutoEcoleId } = useParams();
+  const { user, autoEcoleSlug: contextAutoEcoleSlug } = useAuth();
+  const { autoEcoleSlug: urlAutoEcoleSlug } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -41,24 +41,41 @@ const Eleves = () => {
   const [selectedPoint, setSelectedPoint] = useState<number | null>(null);
   const [selectedAppreciation, setSelectedAppreciation] = useState<'non acquis' | 'à revoir' | 'assimilé' | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [autoEcoleId, setAutoEcoleId] = useState<string | null>(null);
+
+  // Récupère l'id de l'auto-école à partir du slug
+  useEffect(() => {
+    const fetchAutoEcoleId = async () => {
+      const slug = contextAutoEcoleSlug || urlAutoEcoleSlug;
+      if (slug) {
+        const { data, error } = await supabase
+          .from('auto_ecoles')
+          .select('id')
+          .eq('slug', slug)
+          .single();
+        setAutoEcoleId(data?.id || null);
+      }
+    };
+    fetchAutoEcoleId();
+  }, [contextAutoEcoleSlug, urlAutoEcoleSlug]);
 
   // Sécurité : redirige si l'utilisateur tente d'accéder à une auto-école qui n'est pas la sienne
   useEffect(() => {
-    if (urlAutoEcoleId && contextAutoEcoleId && urlAutoEcoleId !== contextAutoEcoleId) {
-      navigate(`/${contextAutoEcoleId}/eleves`, { replace: true });
+    if (urlAutoEcoleSlug && contextAutoEcoleSlug && urlAutoEcoleSlug !== contextAutoEcoleSlug) {
+      navigate(`/${contextAutoEcoleSlug}/eleves`, { replace: true });
     }
-  }, [urlAutoEcoleId, contextAutoEcoleId, navigate]);
+  }, [urlAutoEcoleSlug, contextAutoEcoleSlug, navigate]);
 
   // On ne récupère que les élèves de la même auto-école que le moniteur
   const { data: eleves, isLoading: isLoadingEleves } = useQuery({
-    queryKey: ['eleves', contextAutoEcoleId],
+    queryKey: ['eleves', autoEcoleId],
     queryFn: async () => {
-      if (!contextAutoEcoleId) return [];
+      if (!autoEcoleId) return [];
       const { data: utilisateurs, error: userError } = await supabase
         .from('utilisateurs')
         .select('id, prenom, nom, email, telephone, auto_ecole_id')
         .eq('role', 'eleve')
-        .eq('auto_ecole_id', contextAutoEcoleId);
+        .eq('auto_ecole_id', autoEcoleId);
 
       if (userError) throw userError;
 
@@ -79,6 +96,7 @@ const Eleves = () => {
 
       return elevesAvecHeures as Eleve[];
     },
+    enabled: !!autoEcoleId,
   });
 
   const { data: points, isLoading: isLoadingPoints } = useQuery({
