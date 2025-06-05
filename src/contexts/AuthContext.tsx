@@ -6,15 +6,15 @@ import toast from 'react-hot-toast';
 function slugify(nom: string) {
   return nom
     .toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // enlève les accents
-    .replace(/[^a-z0-9]+/g, '-') // remplace tout sauf lettres/chiffres par -
-    .replace(/(^-|-$)+/g, ''); // enlève les - en début/fin
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)+/g, '');
 }
 
 interface AuthContextType {
   user: any;
   userRole: string;
-  autoEcoleId: string | null;
+  autoEcoleSlug: string | null;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, firstName: string, lastName: string, phone: string, nomAutoecole?: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -26,31 +26,47 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<any>(null);
   const [userRole, setUserRole] = useState<string>('');
-  const [autoEcoleId, setAutoEcoleId] = useState<string | null>(null);
+  const [autoEcoleSlug, setAutoEcoleSlug] = useState<string | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [isBootstrapping, setIsBootstrapping] = useState(true);
   const navigate = useNavigate();
-  const { autoEcoleId: urlAutoEcoleId } = useParams();
+  const { autoEcoleSlug: urlAutoEcoleSlug } = useParams();
 
-  const fetchUserRole = async (userId: string): Promise<string> => {
+  // Récupère le slug de l'utilisateur (depuis la table utilisateurs et auto_ecoles)
+  const fetchUserRoleAndSlug = async (userId: string): Promise<{ role: string, slug: string | null }> => {
     try {
+      // On récupère le role et l'id de l'auto-école de l'utilisateur
       const { data, error } = await supabase
         .from('utilisateurs')
         .select('role, auto_ecole_id')
         .eq('id', userId)
         .maybeSingle();
 
-      if (error) {
+      if (error || !data) {
         console.error('Error fetching user role:', error);
-        return '';
+        return { role: '', slug: null };
       }
 
-      setAutoEcoleId(data?.auto_ecole_id || urlAutoEcoleId || null);
+      // On récupère le slug de l'auto-école
+      let slug: string | null = null;
+      if (data.auto_ecole_id) {
+        const { data: autoEcole, error: autoEcoleError } = await supabase
+          .from('auto_ecoles')
+          .select('slug')
+          .eq('id', data.auto_ecole_id)
+          .maybeSingle();
+        if (autoEcoleError) {
+          console.error('Error fetching autoEcole slug:', autoEcoleError);
+        }
+        slug = autoEcole?.slug || null;
+      }
 
-      return data?.role || '';
+      setAutoEcoleSlug(slug || urlAutoEcoleSlug || null);
+
+      return { role: data.role || '', slug: slug || null };
     } catch (error) {
-      console.error('Error in fetchUserRole:', error);
-      return '';
+      console.error('Error in fetchUserRoleAndSlug:', error);
+      return { role: '', slug: null };
     }
   };
 
@@ -60,7 +76,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await supabase.auth.signOut();
       setUser(null);
       setUserRole('');
-      setAutoEcoleId(null);
+      setAutoEcoleSlug(null);
       navigate('/');
     } catch (error) {
       toast.error("Erreur lors de la déconnexion");
@@ -78,16 +94,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       try {
         if (session?.user) {
-          const role = await fetchUserRole(session.user.id);
+          const { role, slug } = await fetchUserRoleAndSlug(session.user.id);
           if (mounted) {
             setUser(session.user);
             setUserRole(role);
+            setAutoEcoleSlug(slug);
           }
         } else {
           if (mounted) {
             setUser(null);
             setUserRole('');
-            setAutoEcoleId(null);
+            setAutoEcoleSlug(null);
           }
         }
       } catch (error) {
@@ -119,7 +136,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [urlAutoEcoleId]);
+  }, [urlAutoEcoleSlug]);
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -128,27 +145,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         email,
         password
       });
-      
+
       if (error) throw error;
 
       if (data.session) {
-        const role = await fetchUserRole(data.user.id);
+        const { role, slug } = await fetchUserRoleAndSlug(data.user.id);
         setUser(data.user);
         setUserRole(role);
-        
-        if (urlAutoEcoleId) {
-          // Update user's auto_ecole_id if they don't have one
-          const { error: updateError } = await supabase
-            .from('utilisateurs')
-            .update({ auto_ecole_id: urlAutoEcoleId })
-            .eq('id', data.user.id)
-            .is('auto_ecole_id', null);
+        setAutoEcoleSlug(slug);
 
-          if (updateError) throw updateError;
-          
-          navigate(`/${urlAutoEcoleId}`);
-        } else if (autoEcoleId) {
-          navigate(`/${autoEcoleId}`);
+        if (urlAutoEcoleSlug) {
+          navigate(`/${urlAutoEcoleSlug}/accueil`);
+        } else if (slug) {
+          navigate(`/${slug}/accueil`);
         } else {
           navigate('/');
         }
@@ -183,10 +192,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!newUser) throw new Error("Erreur lors de la création du compte");
 
       let autoEcoleId = autoEcoleIdOrNom;
+      let slug: string | null = null;
 
       // Si c'est une création d'auto-école (on reçoit un nom, pas un UUID)
       if (autoEcoleIdOrNom && !/^[0-9a-fA-F-]{36}$/.test(autoEcoleIdOrNom)) {
-        const slug = slugify(autoEcoleIdOrNom);
+        slug = slugify(autoEcoleIdOrNom);
         const { data: autoEcole, error: autoEcoleError } = await supabase
           .from('auto_ecoles')
           .insert({ nom: autoEcoleIdOrNom, slug })
@@ -194,11 +204,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .single();
 
         if (autoEcoleError) {
-          // Nettoyage: supprime l'utilisateur auth si la création auto-école échoue
           await supabase.auth.admin.deleteUser(newUser.id);
           throw autoEcoleError;
         }
         autoEcoleId = autoEcole.id;
+        slug = autoEcole.slug;
 
         // 2. Créer l'utilisateur dans la table utilisateurs
         const { error: userError } = await supabase
@@ -225,16 +235,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .eq('id', autoEcoleId);
 
         if (updateAdminError) {
-          // Optionnel : tu peux afficher une erreur ou juste un warning
           console.warn('Erreur lors de la mise à jour de admin_id:', updateAdminError);
         }
 
         setUser(newUser);
         setUserRole('admin');
-        setAutoEcoleId(autoEcoleId || null);
+        setAutoEcoleSlug(slug);
 
-        if (autoEcoleId) {
-          navigate(`/${autoEcoleId}/accueil`);
+        if (slug) {
+          navigate(`/${slug}/accueil`);
         } else {
           navigate('/');
         }
@@ -242,6 +251,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       // Cas inscription élève (autoEcoleIdOrNom est un UUID)
+      if (autoEcoleId) {
+        // On récupère le slug correspondant à l'id
+        const { data: autoEcole, error: autoEcoleError } = await supabase
+          .from('auto_ecoles')
+          .select('slug')
+          .eq('id', autoEcoleId)
+          .maybeSingle();
+        slug = autoEcole?.slug || null;
+      }
+
       const { error: userError } = await supabase
         .from('utilisateurs')
         .insert({
@@ -261,10 +280,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       setUser(newUser);
       setUserRole('eleve');
-      setAutoEcoleId(autoEcoleId || null);
+      setAutoEcoleSlug(slug);
 
-      if (autoEcoleId) {
-        navigate(`/${autoEcoleId}/accueil`);
+      if (slug) {
+        navigate(`/${slug}/accueil`);
       } else {
         navigate('/');
       }
@@ -287,14 +306,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      userRole, 
-      autoEcoleId,
-      signIn, 
-      signUp, 
-      signOut, 
-      isAuthLoading 
+    <AuthContext.Provider value={{
+      user,
+      userRole,
+      autoEcoleSlug,
+      signIn,
+      signUp,
+      signOut,
+      isAuthLoading
     }}>
       {children}
     </AuthContext.Provider>
