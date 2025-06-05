@@ -1,9 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../supabase/client';
 import { useAuth } from '../contexts/AuthContext';
 import Navigation from '../components/Navigation';
-import { useParams, useNavigate } from 'react-router-dom';
 
 interface Point {
   id: number;
@@ -33,34 +32,7 @@ const appreciationColors = {
 };
 
 const LivretApprentissage = ({ userId }: Props) => {
-  const { user, autoEcoleSlug: contextAutoEcoleSlug } = useAuth();
-  const { autoEcoleSlug: urlAutoEcoleSlug } = useParams();
-  const navigate = useNavigate();
-  const [autoEcoleId, setAutoEcoleId] = useState<string | null>(null);
-
-  // Récupère l'id de l'auto-école à partir du slug
-  useEffect(() => {
-    const fetchAutoEcoleId = async () => {
-      const slug = contextAutoEcoleSlug || urlAutoEcoleSlug;
-      if (slug) {
-        const { data } = await supabase
-          .from('auto_ecoles')
-          .select('id')
-          .eq('slug', slug)
-          .single();
-        setAutoEcoleId(data?.id || null);
-      }
-    };
-    fetchAutoEcoleId();
-  }, [contextAutoEcoleSlug, urlAutoEcoleSlug]);
-
-  // Sécurité : redirige si l'utilisateur tente d'accéder à une auto-école qui n'est pas la sienne
-  useEffect(() => {
-    if (urlAutoEcoleSlug && contextAutoEcoleSlug && urlAutoEcoleSlug !== contextAutoEcoleSlug) {
-      navigate(`/${contextAutoEcoleSlug}/livret-apprentissage`, { replace: true });
-    }
-  }, [urlAutoEcoleSlug, contextAutoEcoleSlug, navigate]);
-
+  const { user } = useAuth();
   const studentId = userId || user?.id;
 
   const { data: points } = useQuery({
@@ -77,9 +49,9 @@ const LivretApprentissage = ({ userId }: Props) => {
   });
 
   const { data: appreciations, isLoading } = useQuery({
-    queryKey: ['appreciations', studentId, autoEcoleId],
+    queryKey: ['appreciations', studentId],
     queryFn: async () => {
-      if (!studentId || !autoEcoleId) return [];
+      if (!studentId) return [];
       const { data, error } = await supabase
         .from('livret_appreciations')
         .select(`
@@ -87,13 +59,12 @@ const LivretApprentissage = ({ userId }: Props) => {
           moniteur:utilisateurs!livret_appreciations_moniteur_id_fkey(prenom, nom)
         `)
         .eq('eleve_id', studentId)
-        .eq('auto_ecole_id', autoEcoleId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       return data as Appreciation[];
     },
-    enabled: !!studentId && !!autoEcoleId,
+    enabled: !!studentId,
   });
 
   if (isLoading) {
