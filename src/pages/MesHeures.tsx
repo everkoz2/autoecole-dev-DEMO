@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import Navigation from '../components/Navigation';
+import { useParams, useNavigate } from 'react-router-dom';
 
 interface Heure {
   id: string;
@@ -31,13 +32,39 @@ interface Heure {
 }
 
 const MesHeures = () => {
-  const { user, userRole } = useAuth();
+  const { user, userRole, autoEcoleSlug: contextAutoEcoleSlug } = useAuth();
+  const { autoEcoleSlug: urlAutoEcoleSlug } = useParams();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('effectuees');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [selectedHeure, setSelectedHeure] = useState<Heure | null>(null);
   const [commentaire, setCommentaire] = useState('');
+  const [autoEcoleId, setAutoEcoleId] = useState<string | null>(null);
+
+  // Récupère l'id de l'auto-école à partir du slug
+  useEffect(() => {
+    const fetchAutoEcoleId = async () => {
+      const slug = contextAutoEcoleSlug || urlAutoEcoleSlug;
+      if (slug) {
+        const { data } = await supabase
+          .from('auto_ecoles')
+          .select('id')
+          .eq('slug', slug)
+          .single();
+        setAutoEcoleId(data?.id || null);
+      }
+    };
+    fetchAutoEcoleId();
+  }, [contextAutoEcoleSlug, urlAutoEcoleSlug]);
+
+  // Sécurité : redirige si l'utilisateur tente d'accéder à une auto-école qui n'est pas la sienne
+  useEffect(() => {
+    if (urlAutoEcoleSlug && contextAutoEcoleSlug && urlAutoEcoleSlug !== contextAutoEcoleSlug) {
+      navigate(`/${contextAutoEcoleSlug}/mes-heures`, { replace: true });
+    }
+  }, [urlAutoEcoleSlug, contextAutoEcoleSlug, navigate]);
 
   useEffect(() => {
     const heuresSubscription = supabase
@@ -64,7 +91,7 @@ const MesHeures = () => {
   }, [user?.id, userRole, queryClient]);
 
   const { data: heures, isLoading } = useQuery({
-    queryKey: ['heures', user?.id, activeTab],
+    queryKey: ['heures', user?.id, activeTab, autoEcoleId],
     queryFn: async () => {
       let query = supabase
         .from('heures')
@@ -73,6 +100,10 @@ const MesHeures = () => {
           eleve:utilisateurs!heures_eleve_id_fkey(prenom, nom),
           moniteur:utilisateurs!heures_moniteur_id_fkey(prenom, nom)
         `);
+
+      if (autoEcoleId) {
+        query = query.eq('auto_ecole_id', autoEcoleId);
+      }
 
       if (userRole === 'eleve') {
         query = query.eq('eleve_id', user?.id);
@@ -110,6 +141,7 @@ const MesHeures = () => {
         return true;
       });
     },
+    enabled: !!user?.id && !!autoEcoleId,
   });
 
   const ajouterCommentaire = useMutation({
