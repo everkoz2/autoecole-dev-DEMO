@@ -45,60 +45,58 @@ function App() {
               <Route path="/auth" element={<Auth />} />
               <Route path="/creer-auto-ecole" element={<CreerAutoEcole />} />
               <Route path="/success" element={<Success />} />
-              
-              {/* Routes for auto-école specific pages */}
-              <Route path="/:autoEcoleId" element={<Accueil />} />
-              <Route path="/:autoEcoleId/accueil" element={<Accueil />} />
-              <Route path="/:autoEcoleId/forfaits" element={<Forfaits />} />
-              <Route path="/:autoEcoleId/auth" element={<Auth />} />
-              
-              {/* Protected routes that require authentication */}
-              <Route path="/:autoEcoleId/gestion-utilisateurs" element={
+
+              {/* Toutes les routes utilisent maintenant le slug */}
+              <Route path="/:autoEcoleSlug/accueil" element={<Accueil />} />
+              <Route path="/:autoEcoleSlug/forfaits" element={<Forfaits />} />
+              <Route path="/:autoEcoleSlug/auth" element={<Auth />} />
+
+              <Route path="/:autoEcoleSlug/gestion-utilisateurs" element={
                 <PrivateRoute roles={['admin']}>
                   <GestionUtilisateurs />
                 </PrivateRoute>
               } />
-              <Route path="/:autoEcoleId/logs" element={
+              <Route path="/:autoEcoleSlug/logs" element={
                 <PrivateRoute roles={['admin']}>
                   <Logs />
                 </PrivateRoute>
               } />
-              <Route path="/:autoEcoleId/calendrier" element={
+              <Route path="/:autoEcoleSlug/calendrier" element={
                 <PrivateRoute roles={['eleve', 'moniteur', 'admin']}>
                   <Calendrier />
                 </PrivateRoute>
               } />
-              <Route path="/:autoEcoleId/mes-heures" element={
+              <Route path="/:autoEcoleSlug/mes-heures" element={
                 <PrivateRoute roles={['eleve', 'moniteur']}>
                   <MesHeures />
                 </PrivateRoute>
               } />
-              <Route path="/:autoEcoleId/mes-documents" element={
+              <Route path="/:autoEcoleSlug/mes-documents" element={
                 <PrivateRoute roles={['eleve']}>
                   <MesDocuments />
                 </PrivateRoute>
               } />
-              <Route path="/:autoEcoleId/livret-apprentissage" element={
+              <Route path="/:autoEcoleSlug/livret-apprentissage" element={
                 <PrivateRoute roles={['eleve']}>
                   <LivretApprentissage />
                 </PrivateRoute>
               } />
-              <Route path="/:autoEcoleId/mes-factures" element={
+              <Route path="/:autoEcoleSlug/mes-factures" element={
                 <PrivateRoute roles={['eleve']}>
                   <MesFactures />
                 </PrivateRoute>
               } />
-              <Route path="/:autoEcoleId/eleves" element={
+              <Route path="/:autoEcoleSlug/eleves" element={
                 <PrivateRoute roles={['moniteur']}>
                   <Eleves />
                 </PrivateRoute>
               } />
-              <Route path="/:autoEcoleId/mon-compte" element={
+              <Route path="/:autoEcoleSlug/mon-compte" element={
                 <PrivateRoute>
                   <MonCompte />
                 </PrivateRoute>
               } />
-              
+
               {/* Catch all route */}
               <Route path="*" element={<Navigate to="/" />} />
             </Routes>
