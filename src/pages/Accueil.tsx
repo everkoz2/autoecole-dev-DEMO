@@ -310,7 +310,7 @@ const Accueil = () => {
                   </div>
                 </div>
 
-                <div className="mt-16">
+                {/*<div className="mt-16">
                   <iframe
                     src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2707.6044233150723!2d5.03798857680362!3d47.32168097106635!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47f29db7c7f6b1d7%3A0xb2198c7a097e81d7!2sRue%20de%20la%20Libert%C3%A9%2C%2021000%20Dijon!5e0!3m2!1sfr!2sfr!4v1684408621396!5m2!1sfr!2sfr"
                     className="w-full h-96 rounded-lg shadow-lg"
@@ -318,8 +318,8 @@ const Accueil = () => {
                     allowFullScreen
                     loading="lazy"
                     referrerPolicy="no-referrer-when-downgrade"
-                  ></iframe>
-                </div>
+                  ></iframe> 
+                </div>*/}
               </div>
             </div>
           </div>
