@@ -154,9 +154,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUserRole(role);
         setAutoEcoleSlug(slug);
 
-        if (urlAutoEcoleSlug) {
-          navigate(`/${urlAutoEcoleSlug}/accueil`);
-        } else if (slug) {
+        if (slug) {
           navigate(`/${slug}/accueil`);
         } else {
           navigate('/');
