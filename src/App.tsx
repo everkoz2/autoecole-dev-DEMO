@@ -13,7 +13,6 @@ import LivretApprentissage from './pages/LivretApprentissage';
 import MesFactures from './pages/MesFactures';
 import Eleves from './pages/Eleves';
 import GestionUtilisateurs from './pages/GestionUtilisateurs';
-import Logs from './pages/Logs';
 import Success from './pages/Success';
 import CreerAutoEcole from './pages/CreerAutoEcole';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -56,10 +55,7 @@ function App() {
                   <GestionUtilisateurs />
                 </PrivateRoute>
               } />
-              <Route path="/:autoEcoleSlug/logs" element={
-                <PrivateRoute roles={['admin']}>
-                  <Logs />
-                </PrivateRoute>
+              
               } />
               <Route path="/:autoEcoleSlug/calendrier" element={
                 <PrivateRoute roles={['eleve', 'moniteur', 'admin']}>
