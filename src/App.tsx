@@ -56,7 +56,6 @@ function App() {
                 </PrivateRoute>
               } />
               
-              } />
               <Route path="/:autoEcoleSlug/calendrier" element={
                 <PrivateRoute roles={['eleve', 'moniteur', 'admin']}>
                   <Calendrier />
