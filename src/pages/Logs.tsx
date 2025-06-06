@@ -3,7 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../supabase/client';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import Navigation from '../components/Navigation'; // AJOUT
+import Navigation from '../components/Navigation';
+import { useAuth } from '../contexts/AuthContext';
 
 interface Log {
   id: string;
@@ -13,6 +14,7 @@ interface Log {
   valeur_cible: string;
   message: string;
   created_at: string;
+  auto_ecole_id?: string;
   utilisateur: {
     prenom: string;
     nom: string;
@@ -23,11 +25,12 @@ interface Log {
 const Logs = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [tableFilter, setTableFilter] = useState('toutes');
+  const { userRole, autoEcoleId } = useAuth();
 
   const { data: logs, isLoading } = useQuery({
-    queryKey: ['logs'],
+    queryKey: ['logs', autoEcoleId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('logs')
         .select(`
           *,
@@ -35,6 +38,12 @@ const Logs = () => {
         `)
         .order('created_at', { ascending: false });
 
+      // Filtrer par auto_ecole_id si l'utilisateur est admin
+      if (userRole === 'admin' && autoEcoleId) {
+        query = query.eq('auto_ecole_id', autoEcoleId);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       return data as Log[];
     },
