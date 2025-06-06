@@ -30,12 +30,6 @@ const Auth = () => {
         await signUp(email, password, firstName, lastName, phone, autoEcoleId);
       }
 
-      // Redirect to the auto-école home page if we have an autoEcoleId
-      if (autoEcoleId) {
-        navigate(`/${autoEcoleId}/accueil`);
-      } else {
-        navigate('/');
-      }
     } catch (error: any) {
       toast.error(error.message || "Une erreur est survenue");
     } finally {
