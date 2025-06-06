@@ -35,7 +35,6 @@ export default function Navigation() {
         { name: 'Mes factures', href: `/${slug}/mes-factures`, roles: ['eleve'] },
         { name: 'Élèves', href: `/${slug}/eleves`, roles: ['moniteur'] },
         { name: 'Gestion utilisateurs', href: `/${slug}/gestion-utilisateurs`, roles: ['admin'] },
-        { name: 'Logs', href: `/${slug}/logs`, roles: ['admin'] },
       ] : [])
     ] : [])
   ];
