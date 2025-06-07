@@ -1,8 +1,9 @@
-// netlify-scheduler: cron(* * * * *)
 const fetch = require('node-fetch');
 
 exports.handler = async function(event, context) {
   try {
+    console.log('Triggering update-passed-hours function...');
+    
     // Add retries for reliability
     const maxRetries = 3;
     let lastError;
@@ -25,6 +26,7 @@ exports.handler = async function(event, context) {
         }
 
         const data = await response.json();
+        console.log('Successfully triggered update-passed-hours:', data);
 
         return {
           statusCode: 200,
@@ -35,8 +37,11 @@ exports.handler = async function(event, context) {
         };
       } catch (error) {
         lastError = error;
+        console.error(`Attempt ${i + 1} failed:`, error.message);
+        
         // Only retry if we haven't reached max retries
         if (i === maxRetries - 1) throw error;
+        
         // Wait before retrying (exponential backoff)
         await new Promise(resolve => setTimeout(resolve, Math.pow(2, i) * 1000));
       }

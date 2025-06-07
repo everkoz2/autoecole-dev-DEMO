@@ -10,3 +10,10 @@
   from = "/*"
   to = "/index.html"
   status = 200
+
+# Fonction programmée pour vérifier les heures passées toutes les 5 minutes
+[[plugins]]
+  package = "@netlify/plugin-scheduled-functions"
+
+[plugins.inputs]
+  schedule = "*/5 * * * *"  # Toutes les 5 minutes

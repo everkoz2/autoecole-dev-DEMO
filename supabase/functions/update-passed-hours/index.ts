@@ -21,6 +21,7 @@ Deno.serve(async (req) => {
     );
 
     const now = new Date();
+    console.log('Checking for passed hours at:', now.toISOString());
 
     // Récupérer toutes les heures réservées non marquées comme passées
     const { data: heures, error: fetchError } = await supabase
@@ -31,11 +32,21 @@ Deno.serve(async (req) => {
 
     if (fetchError) throw fetchError;
 
-    // Filtrer les heures qui sont effectivement passées
+    console.log(`Found ${heures?.length || 0} reserved hours to check`);
+
+    // Filtrer les heures qui sont effectivement passées (utiliser heure_debut au lieu de heure_fin)
     const heuresPassees = heures?.filter(heure => {
-      const dateHeureFin = new Date(`${heure.date}T${heure.heure_fin}`);
-      return dateHeureFin < now;
+      const dateHeureDebut = new Date(`${heure.date}T${heure.heure_debut}`);
+      const isPassed = dateHeureDebut < now;
+      
+      if (isPassed) {
+        console.log(`Hour ${heure.id} is passed: ${dateHeureDebut.toISOString()} < ${now.toISOString()}`);
+      }
+      
+      return isPassed;
     }) ?? [];
+
+    console.log(`Found ${heuresPassees.length} hours that should be marked as passed`);
 
     // Mettre à jour les heures passées
     if (heuresPassees.length > 0) {
@@ -45,12 +56,16 @@ Deno.serve(async (req) => {
         .in('id', heuresPassees.map(h => h.id));
 
       if (updateError) throw updateError;
+      
+      console.log(`Successfully updated ${heuresPassees.length} hours as passed`);
     }
 
     return new Response(
       JSON.stringify({ 
         message: 'Successfully updated passed hours',
-        updated: heuresPassees.length
+        updated: heuresPassees.length,
+        checked: heures?.length || 0,
+        timestamp: now.toISOString()
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -58,8 +73,12 @@ Deno.serve(async (req) => {
       }
     );
   } catch (error) {
+    console.error('Error updating passed hours:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        timestamp: new Date().toISOString()
+      }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500
