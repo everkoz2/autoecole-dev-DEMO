@@ -38,7 +38,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <Router>
         <AuthProvider>
-          <main className="container mx-auto px-4 py-8">
+          <main>
             <Routes>
               <Route path="/" element={<Accueil />} />
               <Route path="/auth" element={<Auth />} />
