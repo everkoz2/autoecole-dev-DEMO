@@ -1,3 +1,4 @@
+// netlify-scheduler: cron(* * * * *)
 const fetch = require('node-fetch');
 
 exports.handler = async function(event, context) {
