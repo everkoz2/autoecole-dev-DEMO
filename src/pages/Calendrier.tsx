@@ -374,20 +374,21 @@ const Calendrier = () => {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Heure début</label>
-                      <input
-                        type="time"
-                        step="3600"
-                        min="08:00"
-                        max="19:00"
+                      <select
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
                         value={newHeure.heure_debut}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          const [hours] = value.split(':');
-                          const formattedTime = `${hours}:00`;
-                          setNewHeure({ ...newHeure, heure_debut: formattedTime });
-                        }}
-                      />
+                        onChange={(e) => setNewHeure({ ...newHeure, heure_debut: e.target.value })}
+                      >
+                        <option value="">-- Choisir une heure --</option>
+                        {Array.from({ length: 12 }, (_, i) => {
+                          const hour = (8 + i).toString().padStart(2, '0');
+                          return (
+                            <option key={hour} value={`${hour}:00`}>
+                              {hour} h
+                            </option>
+                          );
+                        })}
+                      </select>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Heure fin</label>
